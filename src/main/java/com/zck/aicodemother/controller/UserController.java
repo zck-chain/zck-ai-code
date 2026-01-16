@@ -1,6 +1,11 @@
 package com.zck.aicodemother.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.zck.aicodemother.common.BaseResponse;
+import com.zck.aicodemother.common.ResultUtils;
+import com.zck.aicodemother.exception.ErrorCode;
+import com.zck.aicodemother.exception.ThrowUtils;
+import com.zck.aicodemother.model.dto.UserRegisterRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +30,17 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    //注册用户
+    @PostMapping("/register")
+    public BaseResponse<Long> register(@RequestBody UserRegisterRequest userRegisterRequest) {
+        ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
+        String userAccount = userRegisterRequest.getUserAccount();
+        String userPassword = userRegisterRequest.getUserPassword();
+        String checkPassword = userRegisterRequest.getCheckPassword();
+        long result = userService.userRegister(userAccount, userPassword, checkPassword);
+        return ResultUtils.success(result);
+    }
 
     /**
      * 保存用户。
