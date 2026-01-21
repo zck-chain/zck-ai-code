@@ -6,61 +6,66 @@
         <img src="../assets/logo.svg" alt="Logo" class="logo" />
         <h1 class="title">AI零代码应用生成平台</h1>
       </div>
-      
+
       <!-- 中间菜单项 -->
-      <a-menu 
-        :items="menuItems" 
-        mode="horizontal" 
+      <a-menu
+        :items="menuItems"
+        mode="horizontal"
         theme="light"
         class="menu"
         @click="handleMenuClick"
       />
-      
+
       <!-- 右侧用户信息 -->
       <div class="user-info">
-        <a-button type="primary">登录</a-button>
+        <a-button type="primary" @click="handleLoginClick">登录</a-button>
       </div>
     </div>
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
+const router = useRouter()
 
 // 菜单项配置
 const menuItems = ref([
   {
     key: 'home',
     label: '首页',
-    path: '/'
+    path: '/',
   },
   {
     key: 'about',
     label: '关于我们',
-    path: '/about'
+    path: '/about',
   },
   {
     key: 'services',
     label: '服务',
-    path: '/services'
+    path: '/services',
   },
   {
     key: 'contact',
     label: '联系我们',
-    path: '/contact'
-  }
-]);
+    path: '/contact',
+  },
+])
 
 // 处理菜单点击
 const handleMenuClick = (e: any) => {
-  const item = menuItems.value.find(item => item.key === e.key);
+  const item = menuItems.value.find((item) => item.key === e.key)
   if (item && item.path) {
-    router.push(item.path);
+    router.push(item.path)
   }
-};
+}
+
+// 处理登录按钮点击
+const handleLoginClick = () => {
+  router.push('/user/login')
+}
 </script>
 
 <style scoped>
@@ -115,11 +120,11 @@ const handleMenuClick = (e: any) => {
   .header-content {
     padding: 0 16px;
   }
-  
+
   .title {
     font-size: 16px;
   }
-  
+
   .menu {
     margin: 0 24px;
   }
