@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @author 赵承康
  * @date 2026/1/22
  */
+@Deprecated
 public class CodeFileSaver {
     private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
 
