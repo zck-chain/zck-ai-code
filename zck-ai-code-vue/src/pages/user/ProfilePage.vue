@@ -22,7 +22,7 @@
               <div class="avatar-upload-overlay">
                 <a-upload
                   :show-upload-list="false"
-                  :before-upload="() => handleAvatarUpload()"
+                  :before-upload="handleAvatarUpload"
                   accept="image/*"
                 >
                   <a-button size="small" type="primary" icon="camera"> 更换头像 </a-button>
@@ -140,7 +140,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
+import { updateUser, uploadAvatar, getUserInfoVo } from '@/api/userController'
 import type { FormInstance } from 'ant-design-vue'
 
 const router = useRouter()
@@ -152,6 +154,9 @@ const uploading = ref(false)
 
 // 编辑状态
 const editingProfile = ref(false)
+
+// 加载状态
+const loading = ref(false)
 
 // 默认头像
 const defaultAvatar =
@@ -204,45 +209,64 @@ onMounted(async () => {
 // 加载用户信息
 const loadUserInfo = async () => {
   try {
+    loading.value = true
+
     // 从登录用户存储中获取基本信息
     const loginUser = loginUserStore.loginUser
-    if (loginUser) {
-      userInfo.value = {
-        ...userInfo.value,
-        id: loginUser.id || 0,
-        userAccount: loginUser.userAccount || '',
-        userName: loginUser.userName || '',
-        userAvatar: loginUser.userAvatar || '',
-        userProfile: loginUser.userProfile || '',
+    if (loginUser && loginUser.id) {
+      // 调用API获取详细用户信息
+      const response = await getUserInfoVo({ id: loginUser.id })
+      if (response.data.code === 0 && response.data.data) {
+        const userData = response.data.data
+        userInfo.value = {
+          ...userInfo.value,
+          id: userData.id || 0,
+          userAccount: userData.userAccount || '',
+          userName: userData.userName || '',
+          userAvatar: userData.userAvatar || '',
+          userProfile: userData.userProfile || '',
+        }
+
+        // 初始化编辑表单
+        editForm.userName = userInfo.value.userName
+        editForm.userProfile = userInfo.value.userProfile
+      } else {
+        message.error('获取用户信息失败')
       }
-
-      // 初始化编辑表单
-      editForm.userName = userInfo.value.userName
-      editForm.userProfile = userInfo.value.userProfile
     }
-
-    // 这里可以添加额外的API调用来获取更详细的用户信息
-    // 例如：const detailInfo = await getUserDetail(userInfo.value.id)
-    // userInfo.value = { ...userInfo.value, ...detailInfo }
   } catch (error) {
     console.error('加载用户信息失败:', error)
+    message.error('加载用户信息失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
 }
 
 // 处理头像上传
-const handleAvatarUpload = () => {
+const handleAvatarUpload = async (file: File) => {
   uploading.value = true
 
-  // 模拟上传过程
-  setTimeout(() => {
-    // 这里应该是实际的上传逻辑
-    // 例如：const response = await uploadAvatar(file)
-    // userInfo.value.userAvatar = response.data.url
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
 
-    // 模拟成功
+    const response = await uploadAvatar(formData)
+    if (response.data.code === 0 && response.data.data) {
+      userInfo.value.userAvatar = response.data.data
+      // 更新登录用户存储中的头像
+      if (loginUserStore.loginUser) {
+        loginUserStore.loginUser.userAvatar = response.data.data
+      }
+      message.success('头像上传成功')
+    } else {
+      message.error('头像上传失败')
+    }
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    message.error('头像上传失败，请稍后重试')
+  } finally {
     uploading.value = false
-    console.log('头像上传成功')
-  }, 1500)
+  }
 
   return false // 阻止自动上传
 }
@@ -254,10 +278,32 @@ const startEditProfile = () => {
 }
 
 // 保存简介
-const saveProfile = () => {
-  userInfo.value.userProfile = editForm.userProfile
-  editingProfile.value = false
-  console.log('简介保存成功')
+const saveProfile = async () => {
+  try {
+    loading.value = true
+
+    const response = await updateUser({
+      id: userInfo.value.id,
+      userProfile: editForm.userProfile,
+    })
+
+    if (response.data.code === 0) {
+      userInfo.value.userProfile = editForm.userProfile
+      // 更新登录用户存储中的简介
+      if (loginUserStore.loginUser) {
+        loginUserStore.loginUser.userProfile = editForm.userProfile
+      }
+      editingProfile.value = false
+      message.success('简介保存成功')
+    } else {
+      message.error('简介保存失败')
+    }
+  } catch (error) {
+    console.error('保存简介失败:', error)
+    message.error('保存简介失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 取消编辑简介
@@ -272,23 +318,38 @@ const saveUserInfo = async () => {
 
   try {
     await formRef.value.validate()
+    loading.value = true
 
-    // 更新用户信息
-    userInfo.value = {
-      ...userInfo.value,
+    const response = await updateUser({
+      id: userInfo.value.id,
       userName: editForm.userName,
-      email: editForm.email,
-      realName: editForm.realName,
-      gender: editForm.gender,
-      birthday: editForm.birthday,
+    })
+
+    if (response.data.code === 0) {
+      // 更新用户信息
+      userInfo.value = {
+        ...userInfo.value,
+        userName: editForm.userName,
+        email: editForm.email,
+        realName: editForm.realName,
+        gender: editForm.gender,
+        birthday: editForm.birthday,
+      }
+
+      // 更新登录用户存储中的用户名
+      if (loginUserStore.loginUser) {
+        loginUserStore.loginUser.userName = editForm.userName
+      }
+
+      message.success('用户信息保存成功')
+    } else {
+      message.error('用户信息保存失败')
     }
-
-    // 这里可以添加API调用来更新后端数据
-    // 例如：await updateUserInfo(userInfo.value)
-
-    console.log('用户信息保存成功')
   } catch (error) {
-    console.error('表单验证失败:', error)
+    console.error('保存用户信息失败:', error)
+    message.error('保存用户信息失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
 }
 

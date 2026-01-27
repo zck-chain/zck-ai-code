@@ -13,6 +13,7 @@ declare namespace API {
   type BaseResponsePageUserVO = BaseResponse<PageUserVO>
   type BaseResponseUser = BaseResponse<User>
   type BaseResponseUserVO = BaseResponse<UserVO>
+  type BaseResponseString = BaseResponse<string>
 
   // 错误码枚举
   enum ErrorCode {

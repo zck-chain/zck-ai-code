@@ -60,7 +60,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
+import { logout } from '@/api/userController'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
@@ -141,14 +143,22 @@ const handleLoginClick = () => {
 // 处理退出登录
 const handleLogout = async () => {
   try {
-    // 清除本地存储的用户信息
-    localStorage.removeItem('userInfo')
-    // 更新store中的用户信息为未登录状态
-    loginUserStore.setLoginUser({ userName: '未登录' })
-    // 跳转到首页
-    router.push('/')
+    // 调用退出登录API
+    const response = await logout()
+    if (response.data.code === 0) {
+      // 清除本地存储的用户信息
+      localStorage.removeItem('userInfo')
+      // 更新store中的用户信息为未登录状态
+      loginUserStore.setLoginUser({ userName: '未登录' })
+      // 跳转到首页
+      router.push('/')
+      message.success('退出登录成功')
+    } else {
+      message.error('退出登录失败')
+    }
   } catch (error) {
     console.error('退出登录失败:', error)
+    message.error('退出登录失败，请稍后重试')
   }
 }
 
