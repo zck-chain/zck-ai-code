@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import javax.crypto.KeyGenerator;
 
 /**
- * 用户 实体类。
+ * 应用 实体类。
  *
  * @author 赵承康
  */
@@ -26,8 +26,8 @@ import javax.crypto.KeyGenerator;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("user")
-public class User implements Serializable {
+@Table("app")
+public class App implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -35,44 +35,55 @@ public class User implements Serializable {
     /**
      * id
      */
-    @Id(keyType = KeyType.Generator,value = KeyGenerators.snowFlakeId)
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
     private Long id;
 
-    /**
-     * 账号
-     */
-    @Column("userAccount")
-    private String userAccount;
 
     /**
-     * 密码
+     * 应用名称
      */
-    @Column("userPassword")
-    private String userPassword;
+    @Column("appName")
+    private String appName;
 
     /**
-     * 用户昵称
+     * 应用封面
      */
-    @Column("userName")
-    private String userName;
+    private String cover;
 
     /**
-     * 用户头像
+     * 应用初始化的 prompt
      */
-    @Column("userAvatar")
-    private String userAvatar;
+    @Column("initPrompt")
+    private String initPrompt;
 
     /**
-     * 用户简介
+     * 代码生成类型（枚举）
      */
-    @Column("userProfile")
-    private String userProfile;
+    @Column("codeGenType")
+    private String codeGenType;
 
     /**
-     * 用户角色：user/admin
+     * 部署标识
      */
-    @Column("userRole")
-    private String userRole;
+    @Column("deployKey")
+    private String deployKey;
+
+    /**
+     * 部署时间
+     */
+    @Column("deployedTime")
+    private LocalDateTime deployedTime;
+
+    /**
+     * 优先级
+     */
+    private Integer priority;
+
+    /**
+     * 创建用户id
+     */
+    @Column("userId")
+    private Long userId;
 
     /**
      * 编辑时间
