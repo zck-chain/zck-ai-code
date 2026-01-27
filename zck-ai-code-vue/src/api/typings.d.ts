@@ -1,38 +1,29 @@
 declare namespace API {
-  type BaseResponseBoolean = {
+  // 泛型基础响应类型
+  type BaseResponse<T> = {
     code?: number
-    data?: boolean
+    data?: T
     message?: string
   }
 
-  type BaseResponseLoginUserVO = {
-    code?: number
-    data?: LoginUserVO
-    message?: string
-  }
+  // 具体响应类型（保持向后兼容）
+  type BaseResponseBoolean = BaseResponse<boolean>
+  type BaseResponseLoginUserVO = BaseResponse<LoginUserVO>
+  type BaseResponseLong = BaseResponse<number>
+  type BaseResponsePageUserVO = BaseResponse<PageUserVO>
+  type BaseResponseUser = BaseResponse<User>
+  type BaseResponseUserVO = BaseResponse<UserVO>
 
-  type BaseResponseLong = {
-    code?: number
-    data?: number
-    message?: string
-  }
-
-  type BaseResponsePageUserVO = {
-    code?: number
-    data?: PageUserVO
-    message?: string
-  }
-
-  type BaseResponseUser = {
-    code?: number
-    data?: User
-    message?: string
-  }
-
-  type BaseResponseUserVO = {
-    code?: number
-    data?: UserVO
-    message?: string
+  // 错误码枚举
+  enum ErrorCode {
+    SUCCESS = 0,
+    PARAMS_ERROR = 40000,
+    NOT_LOGIN_ERROR = 40100,
+    NO_AUTH_ERROR = 40101,
+    NOT_FOUND_ERROR = 40400,
+    FORBIDDEN_ERROR = 40300,
+    SYSTEM_ERROR = 50000,
+    OPERATION_ERROR = 50001,
   }
 
   type DeleteRequest = {

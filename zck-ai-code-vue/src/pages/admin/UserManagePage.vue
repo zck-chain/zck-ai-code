@@ -127,7 +127,7 @@ const columns = [
     title: '序号',
     key: 'index',
     width: 60,
-    customRender: (_, __, index) => {
+    customRender: (_: any, __: any, index: number) => {
       // 计算序号：(当前页码 - 1) * 每页大小 + 索引 + 1
       return (pagination.current - 1) * pagination.pageSize + index + 1
     },

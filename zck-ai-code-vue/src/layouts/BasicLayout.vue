@@ -13,8 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import GlobalHeader from '../components/GlobalHeader.vue';
-import GlobalFooter from '../components/GlobalFooter.vue';
+import GlobalHeader from '../components/GlobalHeader.vue'
+import GlobalFooter from '../components/GlobalFooter.vue'
 </script>
 
 <style scoped>
@@ -23,14 +23,14 @@ import GlobalFooter from '../components/GlobalFooter.vue';
 }
 
 .content {
-  padding: 24px;
-  min-height: calc(100vh - 64px - 70px);
-  background: #f0f2f5;
+  padding: var(--spacing-lg);
+  min-height: var(--content-min-height);
+  background: var(--background-page);
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .content {
-    padding: 16px;
+    padding: var(--spacing-md);
   }
 }
 </style>

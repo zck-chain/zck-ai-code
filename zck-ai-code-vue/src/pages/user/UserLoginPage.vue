@@ -33,17 +33,6 @@
           />
         </a-form-item>
 
-        <!-- 错误提示 -->
-        <div v-if="errorMessage" class="error-message">
-          <a-alert
-            type="error"
-            message="登录失败"
-            description="{{ errorMessage }}"
-            show-icon
-            banner
-          />
-        </div>
-
         <!-- 登录按钮 -->
         <a-form-item>
           <a-button type="primary" html-type="submit" class="login-button" :loading="loading">
@@ -63,8 +52,10 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { login } from '@/api/userController'
+import { useLoginUserStore } from '@/stores/loginUser'
 
 const router = useRouter()
+const loginUserStore = useLoginUserStore()
 
 // 表单状态
 const formState = reactive<API.UserLoginRequest>({
@@ -74,9 +65,6 @@ const formState = reactive<API.UserLoginRequest>({
 
 // 加载状态
 const loading = ref(false)
-
-// 错误信息
-const errorMessage = ref('')
 
 // 表单验证规则
 const rules = {
@@ -94,7 +82,6 @@ const rules = {
 const handleLogin = async () => {
   try {
     loading.value = true
-    errorMessage.value = ''
 
     const response = await login(formState)
     const result = response.data
@@ -102,16 +89,16 @@ const handleLogin = async () => {
     if (result.code === 0 && result.data) {
       // 登录成功，保存用户信息
       localStorage.setItem('userInfo', JSON.stringify(result.data))
+      // 更新登录用户store
+      loginUserStore.setLoginUser(result.data)
       message.success('登录成功')
 
       // 跳转到首页
       router.push('/')
-    } else {
-      errorMessage.value = result.message || '登录失败，请检查账号密码'
     }
-  } catch (error: any) {
-    errorMessage.value = error.message || '网络错误，请稍后重试'
-    message.error('登录失败')
+    // 登录失败的错误提示由全局响应拦截器处理
+  } catch (error) {
+    // 网络错误的错误提示由全局响应拦截器处理
   } finally {
     loading.value = false
   }
@@ -179,10 +166,6 @@ const handleLogin = async () => {
 
 .register-link a:hover {
   text-decoration: underline;
-}
-
-.error-message {
-  margin-bottom: 16px;
 }
 
 @media (max-width: 768px) {
