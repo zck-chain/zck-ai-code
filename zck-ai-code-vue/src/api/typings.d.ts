@@ -1,34 +1,117 @@
 declare namespace API {
-  // 泛型基础响应类型
-  type BaseResponse<T> = {
+  type adminGetAppByIdParams = {
+    id: number
+  }
+
+  type App = {
+    id?: number
+    appName?: string
+    cover?: string
+    initPrompt?: string
+    codeGenType?: string
+    deployKey?: string
+    deployedTime?: string
+    priority?: number
+    userId?: number
+    editTime?: string
+    createTime?: string
+    updateTime?: string
+    isDelete?: number
+    authorName?: string
+    category?: string
+  }
+
+  type AppAddRequest = {
+    initPrompt?: string
+  }
+
+  type AppDeployRequest = {
+    appId?: number
+  }
+
+  type AppQueryRequest = {
+    pageNum?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    appName?: string
+    codeGenType?: string
+    priority?: number
+    userId?: number
+  }
+
+  type AppUpdateRequest = {
+    id?: number
+    appName?: string
+    cover?: string
+    priority?: number
+  }
+
+  type BaseResponseApp = {
     code?: number
-    data?: T
+    data?: App
     message?: string
   }
 
-  // 具体响应类型（保持向后兼容）
-  type BaseResponseBoolean = BaseResponse<boolean>
-  type BaseResponseLoginUserVO = BaseResponse<LoginUserVO>
-  type BaseResponseLong = BaseResponse<number>
-  type BaseResponsePageUserVO = BaseResponse<PageUserVO>
-  type BaseResponseUser = BaseResponse<User>
-  type BaseResponseUserVO = BaseResponse<UserVO>
-  type BaseResponseString = BaseResponse<string>
+  type BaseResponseBoolean = {
+    code?: number
+    data?: boolean
+    message?: string
+  }
 
-  // 错误码枚举
-  enum ErrorCode {
-    SUCCESS = 0,
-    PARAMS_ERROR = 40000,
-    NOT_LOGIN_ERROR = 40100,
-    NO_AUTH_ERROR = 40101,
-    NOT_FOUND_ERROR = 40400,
-    FORBIDDEN_ERROR = 40300,
-    SYSTEM_ERROR = 50000,
-    OPERATION_ERROR = 50001,
+  type BaseResponseLoginUserVO = {
+    code?: number
+    data?: LoginUserVO
+    message?: string
+  }
+
+  type BaseResponseLong = {
+    code?: number
+    data?: number
+    message?: string
+  }
+
+  type BaseResponsePageApp = {
+    code?: number
+    data?: PageApp
+    message?: string
+  }
+
+  type BaseResponsePageUserVO = {
+    code?: number
+    data?: PageUserVO
+    message?: string
+  }
+
+  type BaseResponseString = {
+    code?: number
+    data?: string
+    message?: string
+  }
+
+  type BaseResponseUser = {
+    code?: number
+    data?: User
+    message?: string
+  }
+
+  type BaseResponseUserVO = {
+    code?: number
+    data?: UserVO
+    message?: string
+  }
+
+  type chatToGenCodeParams = {
+    message: string
+    appId: number
   }
 
   type DeleteRequest = {
     id?: number
+  }
+
+  type getAppByIdParams = {
+    id: number
   }
 
   type getUserByIdParams = {
@@ -50,6 +133,15 @@ declare namespace API {
     updateTime?: string
   }
 
+  type PageApp = {
+    records?: App[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
   type PageUserVO = {
     records?: UserVO[]
     pageNumber?: number
@@ -58,6 +150,8 @@ declare namespace API {
     totalRow?: number
     optimizeCountQuery?: boolean
   }
+
+  type ServerSentEventString = true
 
   type User = {
     id?: number

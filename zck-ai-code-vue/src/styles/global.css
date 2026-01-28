@@ -276,3 +276,321 @@ input:focus, textarea:focus, select:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* 应用特定样式 */
+
+/* 主页样式增强 - 基于参考网站 */
+.home-container {
+  background: linear-gradient(180deg, var(--background-page) 0%, #e0f2fe 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xxl) var(--spacing-md);
+}
+
+/* 按钮样式增强 - 基于参考网站 */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--background-default);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-secondary:hover {
+  background-color: var(--background-light);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 参考网站风格的输入框 */
+.input-reference {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-md);
+  outline: none;
+  transition: all var(--transition-normal);
+  resize: none;
+  min-height: 80px;
+  font-family: inherit;
+  background: var(--background-default);
+  box-shadow: var(--shadow-sm);
+}
+
+.input-reference:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* 参考网站风格的卡片 */
+.card-reference {
+  background: var(--background-default);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
+.card-reference:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 参考网站风格的标签 */
+.tag-reference {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--background-default);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.tag-reference:hover {
+  background-color: var(--background-light);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* 参考网站风格的容器 */
+.container-reference {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 参考网站风格的标题 */
+.title-reference {
+  font-size: var(--font-size-xxxl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 参考网站风格的副标题 */
+.subtitle-reference {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--spacing-xxl);
+}
+
+/* 参考网站风格的Logo */
+.logo-reference {
+  font-size: var(--font-size-xxl);
+  background-color: var(--primary-color);
+  border-radius: var(--border-radius-full);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+/* 参考网站风格的操作按钮 */
+.action-btn-reference {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.action-btn-reference:hover {
+  background-color: var(--background-default);
+  border-color: var(--primary-color);
+}
+
+/* 参考网站风格的创建按钮 */
+.create-btn-reference {
+  width: 40px;
+  height: 40px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-btn-reference:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.create-btn-reference:disabled {
+  background-color: var(--border-light);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 参考网站风格的输入容器 */
+.input-container-reference {
+  position: relative;
+  background: var(--background-default);
+  border-radius: var(--border-radius-xl);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* 参考网站风格的示例提示词 */
+.examples-reference {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  justify-content: center;
+  margin-top: var(--spacing-lg);
+}
+
+/* 输入框样式增强 */
+.input-enhanced {
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-md);
+  transition: all var(--transition-normal);
+}
+
+.input-enhanced:focus {
+  border-color: var(--success-color);
+  box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.1);
+}
+
+/* 卡片样式增强 */
+.card-enhanced {
+  background: var(--background-default);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
+.card-enhanced:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 表格样式增强 */
+.table-enhanced {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--background-default);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.table-enhanced th {
+  background: var(--background-light);
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.table-enhanced td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+.table-enhanced tr:hover {
+  background: var(--background-light);
+}
+
+/* 响应式设计增强 */
+@media (max-width: var(--breakpoint-md)) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: var(--breakpoint-sm)) {
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 加载动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  border-top-color: var(--success-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 消息样式 */
+.message-bubble {
+  border-radius: 20px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message-user {
+  background-color: var(--success-color);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.message-ai {
+  background-color: var(--background-light);
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}

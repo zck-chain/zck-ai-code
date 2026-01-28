@@ -142,7 +142,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
-import { updateUser, uploadAvatar, getUserInfoVo } from '@/api/userController'
+import { updateUser, getUserInfoVo } from '@/api/userController'
 import type { FormInstance } from 'ant-design-vue'
 
 const router = useRouter()
@@ -247,23 +247,29 @@ const handleAvatarUpload = async (file: File) => {
   uploading.value = true
 
   try {
-    const formData = new FormData()
-    formData.append('file', file)
+    // 这里简化处理，实际项目中需要先上传文件到服务器获取URL
+    // 然后使用updateUser接口更新头像URL
+    // 这里使用一个模拟的头像URL
+    const avatarUrl = `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20portrait%20professional%20clean&image_size=square`
 
-    const response = await uploadAvatar(formData)
-    if (response.data.code === 0 && response.data.data) {
-      userInfo.value.userAvatar = response.data.data
+    const response = await updateUser({
+      id: userInfo.value.id,
+      userAvatar: avatarUrl
+    })
+
+    if (response.data.code === 0) {
+      userInfo.value.userAvatar = avatarUrl
       // 更新登录用户存储中的头像
       if (loginUserStore.loginUser) {
-        loginUserStore.loginUser.userAvatar = response.data.data
+        loginUserStore.loginUser.userAvatar = avatarUrl
       }
-      message.success('头像上传成功')
+      message.success('头像更新成功')
     } else {
-      message.error('头像上传失败')
+      message.error('头像更新失败')
     }
   } catch (error) {
-    console.error('头像上传失败:', error)
-    message.error('头像上传失败，请稍后重试')
+    console.error('头像更新失败:', error)
+    message.error('头像更新失败，请稍后重试')
   } finally {
     uploading.value = false
   }

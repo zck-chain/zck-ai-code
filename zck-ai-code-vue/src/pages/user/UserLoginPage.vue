@@ -49,12 +49,13 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { login } from '@/api/userController'
 import { useLoginUserStore } from '@/stores/loginUser'
 
 const router = useRouter()
+const route = useRoute()
 const loginUserStore = useLoginUserStore()
 
 // 表单状态
@@ -93,8 +94,15 @@ const handleLogin = async () => {
       loginUserStore.setLoginUser(result.data)
       message.success('登录成功')
 
-      // 跳转到首页
-      router.push('/')
+      // 检查是否有重定向路径
+      const redirectPath = route.query.redirect as string
+      if (redirectPath) {
+        // 跳转到重定向路径
+        router.push(decodeURIComponent(redirectPath))
+      } else {
+        // 跳转到首页
+        router.push('/')
+      }
     }
     // 登录失败的错误提示由全局响应拦截器处理
   } catch (error) {
@@ -107,39 +115,39 @@ const handleLogin = async () => {
 
 <style scoped>
 .login-page {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - var(--header-height));
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 24px;
+  background: linear-gradient(180deg, var(--background-page) 0%, #e0f2fe 100%);
+  padding: var(--spacing-lg);
 }
 
 .login-container {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 32px;
+  background: var(--background-default);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl);
   width: 100%;
   max-width: 400px;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .login-header h2 {
-  margin: 0 0 8px 0;
-  color: #1890ff;
-  font-size: 24px;
-  font-weight: bold;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--primary-color);
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
 }
 
 .login-header p {
   margin: 0;
-  color: #666;
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .login-form {
@@ -149,33 +157,35 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
   height: 40px;
-  font-size: 16px;
+  font-size: var(--font-size-md);
 }
 
 .register-link {
   text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  color: #666;
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .register-link a {
-  color: #1890ff;
+  color: var(--primary-color);
   text-decoration: none;
+  transition: color var(--transition-normal);
 }
 
 .register-link a:hover {
+  color: var(--primary-hover);
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .login-container {
-    padding: 24px;
-    margin: 0 16px;
+    padding: var(--spacing-lg);
+    margin: 0 var(--spacing-md);
   }
 
   .login-header h2 {
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
 }
 </style>
