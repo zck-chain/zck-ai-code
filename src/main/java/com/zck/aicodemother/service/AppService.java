@@ -7,7 +7,9 @@ import com.zck.aicodemother.model.dto.app.AppAddRequest;
 import com.zck.aicodemother.model.dto.app.AppQueryRequest;
 import com.zck.aicodemother.model.dto.app.AppUpdateRequest;
 import com.zck.aicodemother.model.entity.App;
+import com.zck.aicodemother.model.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
+import reactor.core.publisher.Flux;
 
 /**
  * 应用 服务层。
@@ -108,4 +110,8 @@ public interface AppService extends IService<App> {
      * @return QueryWrapper
      */
     QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest);
+
+    Flux<String> chatToGenCode(Long appId, String message, User loginUser);
+
+    String deployApp(Long appId,User longinUser);
 }
