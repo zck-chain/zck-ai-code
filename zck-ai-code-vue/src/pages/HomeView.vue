@@ -16,6 +16,11 @@ const featuredAppsPage = ref(1)
 const pageSize = 20
 const loading = ref(false)
 
+// 打字机效果相关变量
+const placeholderText = '使用 NoCode 创建一个高效的小工具，帮我计算......'
+const typedPlaceholder = ref('')
+const isTyping = ref(true)
+
 // 示例提示词
 const examplePrompts = [
   '使用 NoCode 创建一个高效的小工具，帮我计算...',
@@ -124,12 +129,30 @@ const formatDate = (dateString: string | undefined): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
+// 打字机效果实现
+const typePlaceholder = async () => {
+  typedPlaceholder.value = '';
+  isTyping.value = true;
+
+  for (let i = 0; i < placeholderText.length; i++) {
+    typedPlaceholder.value = placeholderText.slice(0, i + 1);
+    await new Promise(resolve => setTimeout(resolve, 80)); // 调整打字速度
+  }
+
+  // 打字完成后，延迟一段时间隐藏光标
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  isTyping.value = false;
+};
+
 // 页面加载时初始化数据
 onMounted(() => {
   if (loginUserStore.isLoggedIn()) {
     loadMyApps()
   }
   loadFeaturedApps()
+
+  // 启动打字机效果
+  typePlaceholder()
 
   // 添加假数据到精选案例，用于查看样式效果
   setTimeout(() => {
@@ -217,47 +240,45 @@ onMounted(() => {
   <div class="home-container">
     <!-- 封面图片 -->
     <div class="hero-section">
-      <div class="hero-bg" style="background-image: url('https://img95.699pic.com/photo/40182/0485.jpg_wh1200.jpg');"></div>
       <div class="hero-content">
         <!-- 网站标题 -->
-        <div class="header text-center mb-5">
-          <h1 class="title-reference">
-            一句话 <span class="logo-reference">🐱</span> 呈所想
+        <div class="hero-header text-center mb-6">
+          <h1 class="hero-title">
+            NoCode
           </h1>
-          <p class="subtitle-reference">与 AI 对话轻松创建应用和网站</p>
+          <p class="hero-subtitle">与 AI 对话轻松创建应用和网站</p>
         </div>
 
         <!-- 用户提示词输入框 -->
-        <div class="container-reference mb-5">
-          <div class="input-container-reference">
+        <div class="hero-input-container mb-4">
+          <div class="input-wrapper">
             <textarea
               v-model="promptInput"
-              placeholder="使用 NoCode 创建一个高效的小工具，帮我计算......"
-              class="input-reference"
-              rows="3"
+              :placeholder="typedPlaceholder + (isTyping ? '|' : '')"
+              class="hero-textarea"
+              rows="2"
             ></textarea>
-            <div class="input-actions flex gap-3">
-              <button class="action-btn-reference">
+            <div class="input-actions flex gap-2">
+              <button class="action-btn">
                 📁 上传
               </button>
-              <button class="action-btn-reference">
+              <button class="action-btn">
                 ✨ 优化
               </button>
             </div>
             <button
               @click="createApp"
-              class="create-btn-reference"
+              class="create-btn"
               :disabled="loading"
-              style="position: absolute; right: 16px; bottom: 16px;"
             >
               {{ loading ? '⏳' : '↑' }}
             </button>
           </div>
-          <div class="examples-reference">
+          <div class="hero-examples">
             <span
               v-for="(example, index) in examplePrompts.slice(1)"
               :key="index"
-              class="tag-reference"
+              class="hero-tag"
               @click="promptInput = example"
             >
               {{ example }}
@@ -267,83 +288,37 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 案例广场 -->
-    <div class="apps-section w-full max-w-6xl mb-5">
-      <div class="case-square-header flex justify-between items-center mb-5">
-        <h2 class="section-title text-left mb-0">案例广场</h2>
-        <div class="filter-container flex items-center gap-3">
-          <select class="filter-select border border-gray-300 rounded-md px-3 py-2 text-sm">
-            <option>默认排序</option>
-            <option>最新发布</option>
-            <option>最受欢迎</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 分类标签 -->
-      <div class="category-tags flex flex-wrap gap-2 mb-5">
-        <button class="category-tag active">全部</button>
-        <button class="category-tag">工具</button>
-        <button class="category-tag">网站</button>
-        <button class="category-tag">数据分析</button>
-        <button class="category-tag">活动页面</button>
-        <button class="category-tag">管理平台</button>
-        <button class="category-tag">用户应用</button>
-        <button class="category-tag">个人管理</button>
-        <button class="category-tag">游戏</button>
-        <button class="category-tag more">
-          📋 全部类别
-        </button>
-      </div>
-
-      <!-- 案例卡片网格 -->
-      <div class="apps-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" v-if="featuredApps.length > 0">
+    <!-- 我的应用分页列表 -->
+    <div v-if="loginUserStore.isLoggedIn()" class="apps-section w-full max-w-6xl mb-10">
+      <h2 class="section-title text-center mb-6">我的作品</h2>
+      <div class="apps-grid" v-if="myApps.length > 0">
         <div
-          v-for="app in featuredApps"
+          v-for="app in myApps"
           :key="app.id"
           class="case-card"
           @click="goToAppChat(app.id!)"
         >
-          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover})` }"></div>
+          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover || 'https://via.placeholder.com/400x300'})` }"></div>
           <div class="case-info">
-            <h3 class="case-name">{{ app.appName }}</h3>
+            <h3 class="case-name">{{ app.appName || '未命名应用' }}</h3>
+            <p class="case-description">{{ app.initPrompt ? app.initPrompt.substring(0, 60) + '...' : '暂无描述' }}</p>
             <div class="case-meta flex items-center justify-between">
               <div class="author-info flex items-center gap-2">
                 <div class="author-avatar" :style="{ backgroundColor: getRandomColor(app.id!) }"></div>
-                <span class="author-name">{{ app.authorName }}</span>
+                <span class="author-name">{{ app.authorName || '我' }}</span>
               </div>
               <span class="case-date">{{ formatDate(app.createTime) }}</span>
             </div>
             <div class="case-category">
-              <span class="category-badge">{{ app.category }}</span>
+              <span class="category-badge">{{ app.category || '个人应用' }}</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="empty-state text-center p-5 bg-white rounded-lg shadow-md" v-else>
-        <p>暂无精选应用</p>
+      <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
+        <p class="text-gray-500">暂无应用，开始创建您的第一个应用吧！</p>
       </div>
-    </div>
-
-    <!-- 我的应用分页列表 -->
-    <div v-if="loginUserStore.isLoggedIn()" class="apps-section w-full max-w-6xl mb-5">
-      <h2 class="section-title text-center mb-4">我的作品</h2>
-      <div class="apps-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" v-if="myApps.length > 0">
-        <div
-          v-for="app in myApps"
-          :key="app.id"
-          class="card-reference"
-          @click="goToAppChat(app.id!)"
-        >
-          <div class="app-cover" :style="{ backgroundImage: `url(${app.cover || 'https://via.placeholder.com/400x300'})` }"></div>
-          <h3 class="app-name">{{ app.appName || '未命名应用' }}</h3>
-          <p class="app-time">创建于 {{ new Date(app.createTime || '').toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}</p>
-        </div>
-      </div>
-      <div class="empty-state text-center p-5 bg-white rounded-lg shadow-md" v-else>
-        <p>暂无应用，开始创建您的第一个应用吧！</p>
-      </div>
-      <div class="pagination flex justify-center items-center gap-3" v-if="myApps.length > 0">
+      <div class="pagination flex justify-center items-center gap-3 mt-6" v-if="myApps.length > 0">
         <button
           @click="loadMyApps(myAppsPage - 1)"
           :disabled="myAppsPage === 1"
@@ -360,81 +335,289 @@ onMounted(() => {
         </button>
       </div>
     </div>
+
+    <!-- 案例广场 -->
+    <div class="apps-section w-full max-w-6xl mb-10">
+      <div class="case-square-header flex justify-between items-center mb-6">
+        <h2 class="section-title text-left mb-0">案例广场</h2>
+        <div class="filter-container flex items-center gap-3">
+          <select class="filter-select border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option>默认排序</option>
+            <option>最新发布</option>
+            <option>最受欢迎</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 分类标签 -->
+      <div class="category-tags flex flex-wrap gap-3 mb-8">
+        <button class="category-tag active">全部</button>
+        <button class="category-tag">工具</button>
+        <button class="category-tag">网站</button>
+        <button class="category-tag">数据分析</button>
+        <button class="category-tag">活动页面</button>
+        <button class="category-tag">管理平台</button>
+        <button class="category-tag">用户应用</button>
+        <button class="category-tag">个人管理</button>
+        <button class="category-tag">游戏</button>
+        <button class="category-tag more">
+          📋 全部类别
+        </button>
+      </div>
+
+      <!-- 案例卡片网格 -->
+      <div class="apps-grid" v-if="featuredApps.length > 0">
+        <div
+          v-for="app in featuredApps"
+          :key="app.id"
+          class="case-card"
+          @click="goToAppChat(app.id!)"
+        >
+          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover})` }"></div>
+          <div class="case-info">
+            <h3 class="case-name">{{ app.appName }}</h3>
+            <p class="case-description">{{ app.initPrompt ? app.initPrompt.substring(0, 60) + '...' : '暂无描述' }}</p>
+            <div class="case-meta flex items-center justify-between">
+              <div class="author-info flex items-center gap-2">
+                <div class="author-avatar" :style="{ backgroundColor: getRandomColor(app.id!) }"></div>
+                <span class="author-name">{{ app.authorName }}</span>
+              </div>
+              <span class="case-date">{{ formatDate(app.createTime) }}</span>
+            </div>
+            <div class="case-category">
+              <span class="category-badge">{{ app.category }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
+        <p class="text-gray-500">暂无精选应用</p>
+      </div>
+    </div>
+
+    <!-- 右下角互动小人 -->
+    <div class="interactive-character">
+      👋
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* 全局变量 */
+:root {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #60a5fa;
+  --background-color: #f9fafb;
+  --card-background: #ffffff;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-radius: 12px;
+  --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --box-shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --transition: all 0.3s ease;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+  --spacing-xxxl: 4rem;
+}
+
 /* 封面图片样式 */
 .hero-section {
   position: relative;
-  height: 600px;
+  height: 450px;
   margin-bottom: var(--spacing-xxxl);
   overflow: hidden;
-}
-
-.hero-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: brightness(0.7);
-  z-index: 1;
+  background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: var(--box-shadow);
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
-  height: 100%;
+  width: 100%;
+  max-width: 800px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   padding: var(--spacing-xl);
-  color: white;
+  color: var(--text-primary);
+  text-align: center;
 }
 
-.hero-content .header h1 {
-  color: white;
-  font-size: var(--font-size-xxxxl);
-  margin-bottom: var(--spacing-md);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+.hero-header {
+  margin-bottom: var(--spacing-lg);
 }
 
-.hero-content .header p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: var(--font-size-lg);
+.hero-title {
+  color: var(--text-primary);
+  font-size: 4rem;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.hero-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.25rem;
   margin-bottom: var(--spacing-xl);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 400;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease-out 0.2s both;
 }
 
-.hero-content .container-reference {
-  max-width: 800px;
+.hero-input-container {
+  max-width: 700px;
   width: 100%;
+  animation: fadeInUp 0.8s ease-out 0.4s both;
 }
 
-.hero-content .input-reference {
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  transition: var(--transition);
 }
 
-.hero-content .examples-reference {
-  margin-top: var(--spacing-md);
+.input-wrapper:focus-within {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
 }
 
-.hero-content .tag-reference {
-  background-color: rgba(255, 255, 255, 0.2);
+.hero-textarea {
+  background-color: var(--card-background);
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  min-height: 80px;
+  padding: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none;
+  border-radius: var(--border-radius);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.hero-textarea::placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.hero-textarea:focus {
+  outline: none;
+}
+
+.input-actions {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn:hover {
+  background-color: #f3f4f6;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.create-btn {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
 }
 
-.hero-content .tag-reference:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+.create-btn:hover {
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+}
+
+.create-btn:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.hero-examples {
+  margin-top: var(--spacing-xl);
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  animation: fadeInUp 0.8s ease-out 0.6s both;
+}
+
+.hero-tag {
+  background-color: var(--card-background);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 0.375rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hero-tag:hover {
+  background-color: #eff6ff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
 }
 
 /* 应用卡片样式 */
@@ -442,148 +625,278 @@ onMounted(() => {
   height: 200px;
   background-size: cover;
   background-position: center;
-  background-color: var(--border-light);
+  background-color: #f3f4f6;
+  border-radius: 8px 8px 0 0;
+  transition: var(--transition);
 }
 
 .app-name {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  margin: var(--spacing-md);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1rem;
   color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .app-time {
-  font-size: var(--font-size-sm);
+  font-size: 0.875rem;
   color: var(--text-tertiary);
-  margin: 0 var(--spacing-md) var(--spacing-md);
+  margin: 0 1rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 响应式网格布局 */
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-@media (max-width: var(--breakpoint-md)) {
+/* 响应式调整 */
+@media (max-width: 1200px) {
   .apps-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .apps-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
 /* 案例广场样式 */
 .case-square-header {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title::after {
+  content: '';
+  display: inline-block;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), transparent);
+  border-radius: 3px;
 }
 
 .filter-select {
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  background-color: var(--background-default);
-  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  background-color: var(--card-background);
+  color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color);
 }
 
 /* 分类标签样式 */
 .category-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-lg);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.8s ease-out 0.2s both;
 }
 
 .category-tag {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 0.5rem 1rem;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-full);
-  font-size: var(--font-size-sm);
-  background-color: var(--background-default);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  background-color: var(--card-background);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: var(--transition);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
 .category-tag:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+  background-color: #eff6ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
 }
 
 .category-tag.active {
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
   border-color: var(--primary-color);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
 }
 
 .category-tag.more {
   border: 1px dashed var(--border-color);
+  color: var(--text-tertiary);
+}
+
+.category-tag.more:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: #eff6ff;
 }
 
 /* 案例卡片样式 */
 .case-card {
-  background-color: var(--background-default);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .case-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--box-shadow-hover);
+  border-color: var(--primary-color);
+}
+
+.case-card:hover .case-cover {
+  transform: scale(1.03);
 }
 
 .case-cover {
-  height: 180px;
+  height: 160px;
   background-size: cover;
   background-position: center;
-  background-color: var(--border-light);
+  background-color: #f3f4f6;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  transition: var(--transition);
+  overflow: hidden;
+}
+
+.case-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
 }
 
 .case-info {
-  padding: var(--spacing-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
 }
 
 .case-name {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  margin: 0 0 var(--spacing-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
   color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.4;
+  transition: var(--transition);
+}
+
+.case-card:hover .case-name {
+  color: var(--primary-color);
+}
+
+.case-description {
+  font-size: 0.875rem;
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .case-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-xs);
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
 }
 
 .author-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 0.5rem;
 }
 
 .author-avatar {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: var(--transition);
+}
+
+.case-card:hover .author-avatar {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .author-name {
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .case-date {
   color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .case-category {
@@ -592,37 +905,348 @@ onMounted(() => {
 }
 
 .category-badge {
-  padding: 2px 8px;
-  background-color: var(--background-light);
+  padding: 0.25rem 0.75rem;
+  background-color: #f9fafb;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
+  border-radius: 12px;
+  font-size: 0.75rem;
   color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: var(--transition);
 }
 
-/* 响应式网格布局 */
-@media (max-width: var(--breakpoint-lg)) {
-  .apps-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+.case-card:hover .category-badge {
+  background-color: #eff6ff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 我的应用样式 */
+.apps-section {
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.apps-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  position: relative;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.apps-section h2::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), transparent);
+  border-radius: 3px;
+  margin: 0.5rem auto 0;
+}
+
+.card-reference {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+}
+
+.card-reference:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-color: var(--primary-color);
+}
+
+.pagination {
+  margin-top: 1.5rem;
+  justify-content: center;
+  animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+.btn-secondary {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #eff6ff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.page-info {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 空状态样式 */
+.empty-state {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 4rem 2rem;
+  text-align: center;
+  margin: 2rem 0;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.empty-state:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.empty-state p {
+  color: var(--text-tertiary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* 全局样式 */
+.home-container {
+  min-height: 100vh;
+  background-color: var(--background-color);
+  position: relative;
+}
+
+/* 互动小人样式 */
+.interactive-character {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  z-index: 1000;
+  animation: bounce 2s infinite;
+}
+
+.interactive-character:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 10px 15px rgba(59, 130, 246, 0.4);
+  background-color: var(--primary-hover);
+  animation: none;
+}
+
+.interactive-character:hover::before {
+  content: '你好！';
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: var(--text-primary);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: -1;
+}
+
+.interactive-character:hover::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 1rem;
+  border-width: 0.5rem;
+  border-style: solid;
+  border-color: var(--text-primary) transparent transparent transparent;
+  margin-bottom: -0.5rem;
+  z-index: -1;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .hero-section {
+    height: 500px;
+    padding: 0 1.25rem;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .hero-input-container {
+    max-width: 100%;
+  }
+
+  .input-actions {
+    flex-wrap: wrap;
+  }
+
+  .category-tags {
+    justify-content: center;
+  }
+
+  .apps-section {
+    padding: 0 1rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .interactive-character {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
   }
 }
 
-@media (max-width: var(--breakpoint-md)) {
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .hero-textarea {
+    font-size: 0.875rem;
+    min-height: 70px;
+  }
+
+  .action-btn {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .create-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 1.125rem;
+  }
+
+  .hero-tag {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+  }
+
+  .category-tag {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .interactive-character {
+    bottom: 1rem;
+    right: 1rem;
+    width: 45px;
+    height: 45px;
+    font-size: 1.125rem;
+  }
+}
+
+/* 动画定义 */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 响应式网格布局 */
+@media (max-width: 1200px) {
   .apps-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .apps-grid {
+    grid-template-columns: 1fr;
   }
 
   .case-cover {
     height: 150px;
   }
 
-  .category-tags {
-    gap: 4px;
-  }
-
-  .category-tag {
-    padding: 4px 12px;
-    font-size: 12px;
+  .case-cover::before {
+    height: 150px;
   }
 }
 </style>
