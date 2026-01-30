@@ -69,7 +69,6 @@ public abstract class CodeFileSaverTemplate<T> {
     protected final void writeToFile(String dirPath,String fileName,String content){
         String filePath=dirPath+File.separator+fileName;
         FileUtil.writeString(content,filePath, StandardCharsets.UTF_8);
-
     }
 
 }

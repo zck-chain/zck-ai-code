@@ -5,12 +5,32 @@ import { message } from 'ant-design-vue'
 import api from '@/api'
 import { API_CONFIG } from '@/config/api'
 import { useLoginUserStore } from '@/stores/loginUser'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
+
+// 配置marked使用highlight.js进行代码高亮
+marked.setOptions({
+  highlight: function(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    return hljs.highlight(code, { language }).value
+  },
+  langPrefix: 'hljs language-',
+  breaks: true,
+  gfm: true
+})
+
+// 渲染Markdown内容
+const renderMarkdown = (content: string) => {
+  if (!content) return ''
+  return marked(content)
+}
 
 // 状态管理
 const route = useRoute()
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
-const appId = ref<number>(Number(route.params.id))
+const appId = ref<string>(route.params.id as string)
 const appName = ref('')
 const messages = ref<{ id: number; content: string; isUser: boolean }[]>([])
 const userInput = ref('')
@@ -33,16 +53,8 @@ const loadAppInfo = async () => {
       appName.value = appData.appName || '未命名应用'
       codeGenType.value = appData.codeGenType || ''
 
-      // 如果有初始提示词，添加到消息列表
+      // 如果有初始提示词，发送给AI
       if (appData.initPrompt) {
-        messages.value = [
-          {
-            id: 1,
-            content: appData.initPrompt,
-            isUser: true
-          }
-        ]
-
         // 自动发送初始提示词给AI
         await sendMessageToAI(appData.initPrompt)
       }
@@ -70,9 +82,9 @@ const sendMessageToAI = async (userMessage: string) => {
     // 清空输入框
     userInput.value = ''
 
-    // 创建SSE连接
+    // 创建SSE连接，设置withCredentials为true以携带认证信息
     const url = `${API_CONFIG.BASE_URL}/app/chat/gen/code?message=${encodeURIComponent(userMessage)}&appId=${appId.value}`
-    eventSource.value = new EventSource(url)
+    eventSource.value = new EventSource(url, { withCredentials: true })
 
     // 存储AI回复内容
     let aiResponse = ''
@@ -89,14 +101,26 @@ const sendMessageToAI = async (userMessage: string) => {
     eventSource.value.onmessage = (event) => {
       try {
         const data = event.data
-        if (data === '[DONE]') {
-          // 流式传输结束
-          eventSource.value?.close()
-          loading.value = false
-          codeGenerated.value = true
-        } else {
+        if (data) {
+          // 解析JSON数据，提取实际内容
+          const parsedData = JSON.parse(data)
+          let actualContent = parsedData.d
+
+          // 处理代码块格式，确保使用正确的Markdown标记
+          // 处理HTML代码块
+          actualContent = actualContent.replace(/```html([\s\S]*?)```/g, '\n```html\n$1\n```\n')
+          // 处理CSS代码块
+          actualContent = actualContent.replace(/```css([\s\S]*?)```/g, '\n```css\n$1\n```\n')
+          // 处理JavaScript代码块
+          actualContent = actualContent.replace(/```javascript([\s\S]*?)```/g, '\n```javascript\n$1\n```\n')
+          // 处理可能的HTML代码块标记问题
+          actualContent = actualContent.replace(/"""html/g, '```html')
+          actualContent = actualContent.replace(/"""css/g, '```css')
+          actualContent = actualContent.replace(/"""javascript/g, '```javascript')
+          actualContent = actualContent.replace(/"""/g, '```')
+
           // 累加AI回复内容
-          aiResponse += data
+          aiResponse += actualContent
 
           // 更新AI消息
           const aiMessageIndex = messages.value.findIndex(msg => msg.id === aiMessageId)
@@ -108,6 +132,14 @@ const sendMessageToAI = async (userMessage: string) => {
         console.error('处理SSE消息失败', error)
       }
     }
+
+    // 处理done事件
+    eventSource.value.addEventListener('done', () => {
+      // 流式传输结束
+      eventSource.value?.close()
+      loading.value = false
+      codeGenerated.value = true
+    })
 
     // 处理SSE错误
     eventSource.value.onerror = (error) => {
@@ -191,24 +223,24 @@ const createNewApp = async (prompt: string) => {
 // 页面加载时初始化
 onMounted(async () => {
   const idParam = route.params.id as string
-  
+
   if (idParam === 'new') {
     // 处理新应用创建
     const prompt = route.query.prompt as string
-    
+
     if (!prompt) {
       message.error('缺少创建应用的必要参数')
       router.push('/')
       return
     }
-    
+
     // 检查登录状态
     if (!loginUserStore.isLoggedIn()) {
       const redirectPath = encodeURIComponent(`/app/chat/new?prompt=${encodeURIComponent(prompt)}`)
       router.push(`/user/login?redirect=${redirectPath}`)
       return
     }
-    
+
     // 创建新应用
     await createNewApp(prompt)
   } else if (appId.value) {
@@ -253,9 +285,24 @@ onUnmounted(() => {
             :class="['message', message.isUser ? 'user-message' : 'ai-message']"
           >
             <div class="message-content">
+              <!-- AI头像 -->
+              <template v-if="!message.isUser">
+                <div class="message-avatar">
+                  <img src="@/assets/logo.svg" alt="AI" class="avatar" />
+                </div>
+              </template>
               <div class="message-bubble">
-                {{ message.content }}
+                <template v-if="message.isUser">
+                  {{ message.content }}
+                </template>
+                <template v-else>
+                  <div v-html="renderMarkdown(message.content)"></div>
+                </template>
               </div>
+              <!-- 用户头像位置（留空） -->
+              <template v-if="message.isUser">
+                <div class="message-avatar"></div>
+              </template>
             </div>
           </div>
           <div v-if="loading" class="loading-indicator">
@@ -408,6 +455,20 @@ onUnmounted(() => {
 .message-content {
   display: flex;
   align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.message-avatar {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 2px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .message-bubble {
@@ -435,6 +496,98 @@ onUnmounted(() => {
   padding: var(--spacing-md);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+}
+
+/* Markdown渲染样式 */
+.ai-message .message-bubble {
+  /* 允许Markdown内容的样式正常显示 */
+}
+
+/* 代码块样式 */
+.ai-message .message-bubble pre {
+  background-color: var(--background-light);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  margin: var(--spacing-md) 0;
+}
+
+.ai-message .message-bubble code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background-color: var(--background-light);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.ai-message .message-bubble pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* 标题样式 */
+.ai-message .message-bubble h1,
+.ai-message .message-bubble h2,
+.ai-message .message-bubble h3,
+.ai-message .message-bubble h4,
+.ai-message .message-bubble h5,
+.ai-message .message-bubble h6 {
+  margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.ai-message .message-bubble h1 {
+  font-size: var(--font-size-xl);
+}
+
+.ai-message .message-bubble h2 {
+  font-size: var(--font-size-lg);
+}
+
+.ai-message .message-bubble h3 {
+  font-size: var(--font-size-md);
+}
+
+/* 列表样式 */
+.ai-message .message-bubble ul,
+.ai-message .message-bubble ol {
+  margin: var(--spacing-md) 0;
+  padding-left: var(--spacing-xl);
+}
+
+.ai-message .message-bubble li {
+  margin: var(--spacing-xs) 0;
+}
+
+/* 引用样式 */
+.ai-message .message-bubble blockquote {
+  border-left: 4px solid var(--primary-color);
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* 链接样式 */
+.ai-message .message-bubble a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color var(--transition-normal);
+}
+
+.ai-message .message-bubble a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* 段落样式 */
+.ai-message .message-bubble p {
+  margin: var(--spacing-sm) 0;
 }
 
 .input-container {

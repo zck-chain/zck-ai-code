@@ -42,13 +42,13 @@ const loadApps = async () => {
 }
 
 // 编辑应用
-const editApp = (appId: number) => {
+const editApp = (appId: string) => {
   // 跳转到应用信息修改页
   router.push(`/app/edit/${appId}`)
 }
 
 // 删除应用
-const deleteApp = async (appId: number) => {
+const deleteApp = async (appId: string) => {
   if (!confirm('确定要删除这个应用吗？')) return
 
   try {
@@ -70,7 +70,7 @@ const deleteApp = async (appId: number) => {
 }
 
 // 精选应用（设置优先级为99）
-const featureApp = async (appId: number) => {
+const featureApp = async (appId: string) => {
   try {
     const response = await api.appController.adminUpdateApp({
       id: appId,

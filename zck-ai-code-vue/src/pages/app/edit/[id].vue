@@ -6,7 +6,7 @@ import api from '@/api'
 // 状态管理
 const route = useRoute()
 const router = useRouter()
-const appId = ref<number>(Number(route.params.id))
+const appId = ref<string>(route.params.id as string)
 const appName = ref('')
 const cover = ref('')
 const priority = ref(0)

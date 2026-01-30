@@ -97,8 +97,15 @@ const handleLogin = async () => {
       // 检查是否有重定向路径
       const redirectPath = route.query.redirect as string
       if (redirectPath) {
+        // 处理重定向路径，确保是有效的相对路径
+        let path = decodeURIComponent(redirectPath)
+        // 如果是完整URL，提取路径部分
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          const url = new URL(path)
+          path = url.pathname
+        }
         // 跳转到重定向路径
-        router.push(decodeURIComponent(redirectPath))
+        router.push(path)
       } else {
         // 跳转到首页
         router.push('/')

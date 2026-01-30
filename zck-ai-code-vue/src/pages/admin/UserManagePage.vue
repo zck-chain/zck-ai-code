@@ -359,7 +359,7 @@ const handleModalCancel = () => {
 }
 
 // 确认删除
-const confirmDelete = (userId: number) => {
+const confirmDelete = (userId: string) => {
   Modal.confirm({
     title: '删除用户',
     content: '确定要删除这个用户吗？此操作不可恢复。',
@@ -371,7 +371,7 @@ const confirmDelete = (userId: number) => {
 }
 
 // 处理删除
-const handleDelete = async (userId: number) => {
+const handleDelete = async (userId: string) => {
   try {
     loading.value = true
 

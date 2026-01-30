@@ -39,6 +39,7 @@ const createApp = async () => {
 
   // 检查登录状态
   if (!loginUserStore.isLoggedIn()) {
+    message.warning('请先登录')
     // 保存当前操作路径，登录后返回
     const redirectPath = encodeURIComponent(`/app/chat/new?prompt=${encodeURIComponent(promptInput.value)}`)
     router.push(`/user/login?redirect=${redirectPath}`)
@@ -52,6 +53,7 @@ const createApp = async () => {
     })
 
     if (response.data.code === 0 && response.data.data) {
+      console.log("response.data.data",response.data.data)
       // 跳转到应用生成对话页
       router.push(`/app/chat/${response.data.data}`)
     } else {
@@ -100,7 +102,7 @@ const loadFeaturedApps = async (page: number = 1) => {
 }
 
 // 跳转到应用对话页
-const goToAppChat = (appId: number) => {
+const goToAppChat = (appId: string | number) => {
   // 检查登录状态
   if (!loginUserStore.isLoggedIn()) {
     // 保存当前操作路径，登录后返回
@@ -113,12 +115,13 @@ const goToAppChat = (appId: number) => {
 }
 
 // 辅助函数：生成随机颜色
-const getRandomColor = (id: number | undefined): string => {
+const getRandomColor = (id: string | number | undefined): string => {
   const colors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
     '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
   ];
-  const index = Math.abs((id || 0) % colors.length);
+  const numericId = typeof id === 'string' ? parseInt(id, 10) || 0 : (id || 0);
+  const index = Math.abs(numericId % colors.length);
   return colors[index] as string;
 };
 
@@ -159,7 +162,7 @@ onMounted(() => {
     if (featuredApps.value.length === 0) {
       featuredApps.value = [
         {
-          id: 1,
+          id: '1',
           appName: 'NoCode创新挑战赛官网',
           cover: 'https://img95.699pic.com/photo/40182/0485.jpg_wh300.jpg',
           createTime: '2026-01-08',
@@ -168,7 +171,7 @@ onMounted(() => {
           category: '网站'
         },
         {
-          id: 2,
+          id: '2',
           appName: '新居民',
           cover: 'https://img95.699pic.com/photo/40006/2382.jpg_wh300.jpg',
           createTime: '2025-10-31',
@@ -177,7 +180,7 @@ onMounted(() => {
           category: '用户应用'
         },
         {
-          id: 3,
+          id: '3',
           appName: '循环绿意',
           cover: 'https://img95.699pic.com/photo/50062/5740.jpg_wh300.jpg',
           createTime: '2025-11-01',
@@ -186,7 +189,7 @@ onMounted(() => {
           category: '网站'
         },
         {
-          id: 4,
+          id: '4',
           appName: 'WePin (拼拼)',
           cover: 'https://img95.699pic.com/photo/40177/7519.jpg_wh300.jpg',
           createTime: '2025-09-29',
@@ -195,7 +198,7 @@ onMounted(() => {
           category: '用户应用'
         },
         {
-          id: 5,
+          id: '5',
           appName: 'Echo回声',
           cover: 'https://img95.699pic.com/photo/50045/1369.jpg_wh300.jpg',
           createTime: '2025-11-11',
@@ -204,7 +207,7 @@ onMounted(() => {
           category: '工具'
         },
         {
-          id: 6,
+          id: '6',
           appName: '办公用品管理平台',
           cover: 'https://img95.699pic.com/photo/50049/5886.jpg_wh300.jpg',
           createTime: '2025-11-07',
@@ -213,7 +216,7 @@ onMounted(() => {
           category: '管理平台'
         },
         {
-          id: 7,
+          id: '7',
           appName: '双国时光',
           cover: 'https://img95.699pic.com/photo/50045/0842.jpg_wh300.jpg',
           createTime: '2025-08-21',
@@ -222,7 +225,7 @@ onMounted(() => {
           category: '网站'
         },
         {
-          id: 8,
+          id: '8',
           appName: '智能饮食推荐面板',
           cover: 'https://img95.699pic.com/photo/50035/1510.jpg_wh300.jpg',
           createTime: '2025-09-09',
@@ -429,6 +432,7 @@ onMounted(() => {
 
 /* 封面图片样式 */
 .hero-section {
+  width: 70%;
   position: relative;
   height: 450px;
   margin-bottom: var(--spacing-xxxl);
