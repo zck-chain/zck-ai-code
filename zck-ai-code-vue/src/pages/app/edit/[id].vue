@@ -1,3 +1,66 @@
+<template>
+  <div class="app-edit-container">
+    <div class="page-header">
+      <h1>应用信息修改</h1>
+    </div>
+
+    <div class="edit-form-section">
+      <form class="edit-form" @submit.prevent="saveChanges">
+        <div class="form-item">
+          <label for="appName">应用名称 <span class="required">*</span></label>
+          <input
+            id="appName"
+            v-model="appName"
+            type="text"
+            placeholder="请输入应用名称"
+            class="form-input"
+            required
+          />
+        </div>
+
+        <div v-if="isAdmin" class="form-item">
+          <label for="cover">应用封面</label>
+          <input
+            id="cover"
+            v-model="cover"
+            type="text"
+            placeholder="请输入应用封面URL"
+            class="form-input"
+          />
+        </div>
+
+        <div v-if="isAdmin" class="form-item">
+          <label for="priority">优先级</label>
+          <input
+            id="priority"
+            v-model.number="priority"
+            type="number"
+            placeholder="请输入优先级"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            @click="router.back()"
+            class="cancel-btn"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            class="save-btn"
+            :disabled="loading"
+          >
+            {{ loading ? '保存中...' : '保存' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -89,69 +152,6 @@ onMounted(() => {
   }
 })
 </script>
-
-<template>
-  <div class="app-edit-container">
-    <div class="page-header">
-      <h1>应用信息修改</h1>
-    </div>
-
-    <div class="edit-form-section">
-      <form class="edit-form" @submit.prevent="saveChanges">
-        <div class="form-item">
-          <label for="appName">应用名称 <span class="required">*</span></label>
-          <input
-            id="appName"
-            v-model="appName"
-            type="text"
-            placeholder="请输入应用名称"
-            class="form-input"
-            required
-          />
-        </div>
-
-        <div v-if="isAdmin" class="form-item">
-          <label for="cover">应用封面</label>
-          <input
-            id="cover"
-            v-model="cover"
-            type="text"
-            placeholder="请输入应用封面URL"
-            class="form-input"
-          />
-        </div>
-
-        <div v-if="isAdmin" class="form-item">
-          <label for="priority">优先级</label>
-          <input
-            id="priority"
-            v-model.number="priority"
-            type="number"
-            placeholder="请输入优先级"
-            class="form-input"
-          />
-        </div>
-
-        <div class="form-actions">
-          <button
-            type="button"
-            @click="router.back()"
-            class="cancel-btn"
-          >
-            取消
-          </button>
-          <button
-            type="submit"
-            class="save-btn"
-            :disabled="loading"
-          >
-            {{ loading ? '保存中...' : '保存' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .app-edit-container {

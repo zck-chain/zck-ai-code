@@ -1,125 +1,3 @@
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '@/api'
-
-// 状态管理
-const router = useRouter()
-const apps = ref<API.App[]>([])
-const pageNum = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const loading = ref(false)
-const searchParams = ref<API.AppQueryRequest>({
-  appName: '',
-  codeGenType: '',
-  priority: undefined,
-  userId: undefined
-})
-
-// 加载应用列表
-const loadApps = async () => {
-  try {
-    loading.value = true
-    const response = await api.appController.adminListAppByPage({
-      ...searchParams.value,
-      pageNum: pageNum.value,
-      pageSize: pageSize.value
-    })
-
-    if (response.data.code === 0 && response.data.data) {
-      apps.value = response.data.data.records || []
-      total.value = response.data.data.totalRow || 0
-    } else {
-      alert('加载应用列表失败：' + response.data.message)
-    }
-  } catch (error) {
-    console.error('加载应用列表失败', error)
-    alert('加载应用列表失败，请稍后重试')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 编辑应用
-const editApp = (appId: string) => {
-  // 跳转到应用信息修改页
-  router.push(`/app/edit/${appId}`)
-}
-
-// 删除应用
-const deleteApp = async (appId: string) => {
-  if (!confirm('确定要删除这个应用吗？')) return
-
-  try {
-    const response = await api.appController.adminDeleteApp({
-      id: appId
-    })
-
-    if (response.data.code === 0 && response.data.data) {
-      alert('删除成功')
-      // 重新加载列表
-      loadApps()
-    } else {
-      alert('删除失败：' + response.data.message)
-    }
-  } catch (error) {
-    console.error('删除应用失败', error)
-    alert('删除应用失败，请稍后重试')
-  }
-}
-
-// 精选应用（设置优先级为99）
-const featureApp = async (appId: string) => {
-  try {
-    const response = await api.appController.adminUpdateApp({
-      id: appId,
-      priority: 99
-    })
-
-    if (response.data.code === 0 && response.data.data) {
-      alert('设置精选成功')
-      // 重新加载列表
-      loadApps()
-    } else {
-      alert('设置精选失败：' + response.data.message)
-    }
-  } catch (error) {
-    console.error('设置精选失败', error)
-    alert('设置精选失败，请稍后重试')
-  }
-}
-
-// 搜索
-const search = () => {
-  pageNum.value = 1
-  loadApps()
-}
-
-// 重置搜索
-const resetSearch = () => {
-  searchParams.value = {
-    appName: '',
-    codeGenType: '',
-    priority: undefined,
-    userId: undefined
-  }
-  pageNum.value = 1
-  loadApps()
-}
-
-// 分页
-const handlePageChange = (page: number) => {
-  pageNum.value = page
-  loadApps()
-}
-
-// 页面加载时初始化
-onMounted(() => {
-  loadApps()
-})
-</script>
-
 <template>
   <div class="app-manage-container">
     <div class="page-header">
@@ -272,6 +150,128 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/api'
+
+// 状态管理
+const router = useRouter()
+const apps = ref<API.App[]>([])
+const pageNum = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
+const loading = ref(false)
+const searchParams = ref<API.AppQueryRequest>({
+  appName: '',
+  codeGenType: '',
+  priority: undefined,
+  userId: undefined
+})
+
+// 加载应用列表
+const loadApps = async () => {
+  try {
+    loading.value = true
+    const response = await api.appController.adminListAppByPage({
+      ...searchParams.value,
+      pageNum: pageNum.value,
+      pageSize: pageSize.value
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      apps.value = response.data.data.records || []
+      total.value = response.data.data.totalRow || 0
+    } else {
+      alert('加载应用列表失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('加载应用列表失败', error)
+    alert('加载应用列表失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 编辑应用
+const editApp = (appId: string) => {
+  // 跳转到应用信息修改页
+  router.push(`/app/edit/${appId}`)
+}
+
+// 删除应用
+const deleteApp = async (appId: string) => {
+  if (!confirm('确定要删除这个应用吗？')) return
+
+  try {
+    const response = await api.appController.adminDeleteApp({
+      id: appId
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      alert('删除成功')
+      // 重新加载列表
+      loadApps()
+    } else {
+      alert('删除失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('删除应用失败', error)
+    alert('删除应用失败，请稍后重试')
+  }
+}
+
+// 精选应用（设置优先级为99）
+const featureApp = async (appId: string) => {
+  try {
+    const response = await api.appController.adminUpdateApp({
+      id: appId,
+      priority: 99
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      alert('设置精选成功')
+      // 重新加载列表
+      loadApps()
+    } else {
+      alert('设置精选失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('设置精选失败', error)
+    alert('设置精选失败，请稍后重试')
+  }
+}
+
+// 搜索
+const search = () => {
+  pageNum.value = 1
+  loadApps()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchParams.value = {
+    appName: '',
+    codeGenType: '',
+    priority: undefined,
+    userId: undefined
+  }
+  pageNum.value = 1
+  loadApps()
+}
+
+// 分页
+const handlePageChange = (page: number) => {
+  pageNum.value = page
+  loadApps()
+}
+
+// 页面加载时初始化
+onMounted(() => {
+  loadApps()
+})
+</script>
 
 <style scoped>
 .app-manage-container {
