@@ -95,12 +95,6 @@ const originMenuItems = ref([
     path: '/admin/userManage',
     requiresAdmin: true,
   },
-  {
-    key: 'appManage',
-    label: '应用管理',
-    path: '/admin/appManage',
-    requiresAdmin: true,
-  },
 ])
 
 // 基于用户权限过滤后的菜单项

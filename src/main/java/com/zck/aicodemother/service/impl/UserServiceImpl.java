@@ -179,7 +179,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         String sortField = userQueryRequest.getSortField();
         String sortOrder = userQueryRequest.getSortOrder();
         return QueryWrapper.create()
-                .eq("userRole", userRole,StrUtil.isNotBlank(userRole))
+                .eq("userRole", userRole)
                 .like("userAccount", userAccount)
                 .like("userName", userName)
                 .like("userProfile", userProfile)

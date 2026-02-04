@@ -125,9 +125,12 @@ import { listUserVoByPage, addUser, updateUser, deleteUser } from '@/api/userCon
 const columns = [
   {
     title: '序号',
-    dataIndex: 'index',
     key: 'index',
     width: 60,
+    customRender: (_: any, __: any, index: number) => {
+      // 计算序号：(当前页码 - 1) * 每页大小 + 索引 + 1
+      return (pagination.current - 1) * pagination.pageSize + index + 1
+    },
   },
   {
     title: 'ID',
@@ -246,17 +249,10 @@ const getUserList = async () => {
     const result = response.data
 
     if (result.code === 0 && result.data) {
-      const records = result.data.records || []
-      // 为每条记录添加序号
-      const current = Number(result.data.pageNumber) || Number(pagination.current) || 1
-      const pageSize = Number(result.data.pageSize) || Number(pagination.pageSize) || 10
-      userList.value = records.map((record: any, index: number) => ({
-        ...record,
-        index: (current - 1) * pageSize + index + 1
-      }))
+      userList.value = result.data.records || []
       pagination.total = result.data.totalRow || 0
-      pagination.current = current
-      pagination.pageSize = pageSize
+      pagination.current = result.data.pageNumber || 1
+      pagination.pageSize = result.data.pageSize || 10
     } else {
       message.error('获取用户列表失败')
     }

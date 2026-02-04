@@ -15,15 +15,37 @@
             应用详情
           </button>
           <!-- 应用详情悬浮窗 -->
-          <AppDetailsPopup
-            v-if="showAppDetails"
-            :appCreatorName="appCreatorName"
-            :formattedCreateTime="formattedCreateTime"
-            :isOwner="isOwner"
-            @close="showAppDetails = false"
-            @edit="editApp"
-            @delete="showDeleteConfirm"
-          />
+          <div v-if="showAppDetails" class="app-details-popup">
+            <div class="popup-header">
+              <h3>应用信息</h3>
+              <button @click="showAppDetails = false" class="close-btn">×</button>
+            </div>
+            <div class="popup-content">
+              <!-- 应用基础信息 -->
+              <div class="app-basic-info">
+                <h4>基础信息</h4>
+                <div class="info-item">
+                  <span class="info-label">创建者：</span>
+                  <div class="creator-info">
+                    <div class="creator-avatar" :style="{ backgroundColor: getCreatorAvatarColor() }"></div>
+                    <span class="creator-name">{{ appCreatorName || '未知' }}</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">创建时间：</span>
+                  <span class="info-value">{{ formattedCreateTime || '未知' }}</span>
+                </div>
+              </div>
+              <!-- 操作栏（仅本人或管理员可见） -->
+              <div v-if="isOwner" class="app-actions">
+                <h4>操作</h4>
+                <div class="action-buttons">
+                  <button @click="editApp" class="action-btn edit-btn">修改</button>
+                  <button @click="deleteApp" class="action-btn delete-btn">删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- 部署按钮 -->
         <button
@@ -33,41 +55,6 @@
         >
           {{ deploying ? '部署中...' : (deployedUrl ? '已部署' : '部署应用') }}
         </button>
-      </div>
-    </div>
-
-    <!-- 删除确认弹窗 -->
-    <div v-if="showDeleteConfirmDialog" class="delete-confirm-overlay">
-      <div class="delete-confirm-popup">
-        <div class="confirm-icon">⚠️</div>
-        <h4>确定要删除这个应用吗？</h4>
-        <div class="confirm-buttons">
-          <button @click="cancelDelete" class="cancel-btn">取消</button>
-          <button @click="confirmDelete" class="confirm-btn">确定</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 部署成功弹窗 -->
-    <div v-if="showDeploySuccessDialog" class="deploy-success-overlay">
-      <div class="deploy-success-popup">
-        <button @click="closeDeploySuccessDialog" class="deploy-success-close">×</button>
-        <div class="deploy-success-header">部署成功</div>
-        <div class="deploy-success-icon">✓</div>
-        <h4>网站部署成功！</h4>
-        <p class="deploy-success-message">你的网站已经成功部署，可以通过以下链接访问：</p>
-        <div class="deploy-url-container">
-          <input
-            v-model="deployedUrl"
-            type="text"
-            class="deploy-url-input"
-            readonly
-          />
-          <button @click="copyDeployUrl" class="copy-btn">📋</button>
-        </div>
-        <div class="deploy-success-buttons">
-          <button @click="visitWebsite" class="visit-btn">访问网站</button>
-        </div>
       </div>
     </div>
 
@@ -118,7 +105,7 @@
             <input
               v-model="userInput"
               type="text"
-              placeholder="请描述你想生成的网站，越详细效果越好哦"
+              placeholder="请输入您的需求..."
               class="user-input"
               @keyup.enter="sendMessage"
               :disabled="loading || !isOwner"
@@ -166,7 +153,6 @@ import { message } from 'ant-design-vue'
 import api from '@/api'
 import { API_CONFIG } from '@/config/api'
 import { useLoginUserStore } from '@/stores/loginUser'
-import AppDetailsPopup from '@/components/app/AppDetailsPopup.vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
@@ -206,8 +192,6 @@ const isOwner = ref(false)
 const showEditTooltip = ref(false)
 // 应用详情相关状态
 const showAppDetails = ref(false)
-const showDeleteConfirmDialog = ref(false)
-const showDeploySuccessDialog = ref(false)
 const appCreatorName = ref('')
 const appCreateTime = ref('')
 const formattedCreateTime = ref('')
@@ -227,11 +211,6 @@ const loadAppInfo = async () => {
       appCreateTime.value = appData.createTime || ''
       formattedCreateTime.value = formatDate(appData.createTime)
 
-      // 检查应用是否已经生成过代码
-      if (appData.codeGenType) {
-        codeGenerated.value = true
-      }
-
       // 权限校验：检查当前用户是否是应用的所有者
       if (loginUserStore.isLoggedIn()) {
         const currentUserId = loginUserStore.user?.id || ''
@@ -241,7 +220,7 @@ const loadAppInfo = async () => {
 
       // 检查是否有 ?view=1 参数，如果没有则自动发送初始提示词
       const viewParam = route.query.view as string
-      if (appData.initPrompt && viewParam !== '1' && !appData.codeGenType) {
+      if (appData.initPrompt && viewParam !== '1') {
         // 自动发送初始提示词给AI
         await sendMessageToAI(appData.initPrompt)
       }
@@ -259,7 +238,20 @@ const toggleAppDetails = () => {
   showAppDetails.value = !showAppDetails.value
 }
 
-
+// 获取创建者头像颜色
+const getCreatorAvatarColor = () => {
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+  ];
+  const creatorName = appCreatorName.value || '未知';
+  let hash = 0;
+  for (let i = 0; i < creatorName.length; i++) {
+    hash = creatorName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash % colors.length);
+  return colors[index];
+};
 
 // 格式化日期
 const formatDate = (dateString: string | undefined): string => {
@@ -270,27 +262,18 @@ const formatDate = (dateString: string | undefined): string => {
 
 // 编辑应用
 const editApp = () => {
+  message.info('编辑功能开发中');
   showAppDetails.value = false;
-  router.push(`/app/edit/${appId.value}`);
 };
 
-// 显示删除确认弹窗
-const showDeleteConfirm = () => {
+// 删除应用
+const deleteApp = () => {
+  if (confirm('确定要删除这个应用吗？此操作不可恢复。')) {
+    // 这里可以添加删除应用的API调用
+    message.success('应用删除成功');
+    router.push('/');
+  }
   showAppDetails.value = false;
-  showDeleteConfirmDialog.value = true;
-};
-
-// 取消删除
-const cancelDelete = () => {
-  showDeleteConfirmDialog.value = false;
-};
-
-// 确认删除
-const confirmDelete = () => {
-  // 这里可以添加删除应用的API调用
-  message.success('应用删除成功');
-  router.push('/');
-  showDeleteConfirmDialog.value = false;
 };
 
 // 发送消息给AI
@@ -396,7 +379,7 @@ const deployApp = async () => {
 
     if (response.data.code === 0 && response.data.data) {
       deployedUrl.value = response.data.data
-      showDeploySuccessDialog.value = true
+      message.success('应用部署成功！访问地址：' + response.data.data)
     } else {
       message.error('部署失败：' + response.data.message)
     }
@@ -405,32 +388,6 @@ const deployApp = async () => {
     message.error('部署应用失败，请稍后重试')
   } finally {
     deploying.value = false
-  }
-}
-
-// 关闭部署成功弹窗
-const closeDeploySuccessDialog = () => {
-  showDeploySuccessDialog.value = false
-}
-
-// 复制部署URL
-const copyDeployUrl = () => {
-  if (deployedUrl.value) {
-    navigator.clipboard.writeText(deployedUrl.value)
-      .then(() => {
-        message.success('链接已复制到剪贴板！')
-      })
-      .catch(err => {
-        console.error('复制失败:', err)
-        message.error('复制失败，请手动复制')
-      })
-  }
-}
-
-// 访问网站
-const visitWebsite = () => {
-  if (deployedUrl.value) {
-    window.open(deployedUrl.value, '_blank')
   }
 }
 
@@ -568,7 +525,167 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
+/* 应用详情悬浮窗 */
+.app-details-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-xs);
+  width: 320px;
+  background-color: white;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+}
 
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--background-light);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-normal);
+}
+
+.close-btn:hover {
+  background-color: var(--background-light);
+  color: var(--text-primary);
+}
+
+.popup-content {
+  padding: var(--spacing-lg);
+}
+
+/* 应用基础信息 */
+.app-basic-info {
+  margin-bottom: var(--spacing-lg);
+}
+
+.app-basic-info h4 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.info-label {
+  width: 80px;
+  color: var(--text-secondary);
+}
+
+.info-value {
+  color: var(--text-primary);
+  flex: 1;
+}
+
+/* 创建者信息 */
+.creator-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.creator-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+}
+
+.creator-name {
+  color: var(--text-primary);
+}
+
+/* 操作栏 */
+.app-actions {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.app-actions h4 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.action-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  flex: 1;
+}
+
+.edit-btn {
+  background-color: var(--background-light);
+  color: var(--text-primary);
+}
+
+.edit-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.delete-btn {
+  background-color: var(--background-light);
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+
+.delete-btn:hover {
+  background-color: var(--error-color);
+  color: white;
+}
 
 .deploy-btn {
   padding: var(--spacing-sm) var(--spacing-xl);
@@ -603,7 +720,7 @@ onUnmounted(() => {
 }
 
 .chat-section {
-  width: 40%;
+  width: 50%;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border-color);
@@ -612,11 +729,11 @@ onUnmounted(() => {
 
 .messages-container {
   flex: 1;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
 .message {
@@ -860,14 +977,14 @@ onUnmounted(() => {
 }
 
 .preview-section {
-  width: 60%;
+  width: 50%;
   display: flex;
   flex-direction: column;
   background-color: var(--background-light);
 }
 
 .preview-header {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
   background-color: var(--background-default);
 }
@@ -904,257 +1021,6 @@ onUnmounted(() => {
   border: none;
 }
 
-/* 删除确认弹窗样式 */
-.delete-confirm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.delete-confirm-popup {
-  background-color: white;
-  border-radius: 8px;
-  padding: 30px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.confirm-icon {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
-
-.delete-confirm-popup h4 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  text-align: center;
-}
-
-.confirm-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.cancel-btn,
-.confirm-btn {
-  padding: 8px 24px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.cancel-btn {
-  background-color: white;
-  color: #333;
-}
-
-.cancel-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
-}
-
-.confirm-btn {
-  background-color: #1890ff;
-  color: white;
-  border-color: #1890ff;
-}
-
-.confirm-btn:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
-}
-
-/* 部署成功弹窗样式 */
-.deploy-success-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.deploy-success-popup {
-  background-color: white;
-  border-radius: 8px;
-  padding: 30px;
-  width: 500px;
-  max-width: 90%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.deploy-success-close {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s;
-}
-
-.deploy-success-close:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #333;
-}
-
-.deploy-success-header {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  align-self: flex-start;
-  margin: 0;
-}
-
-.deploy-success-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #52c41a;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
-.deploy-success-popup h4 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-  text-align: center;
-}
-
-.deploy-success-message {
-  font-size: 14px;
-  color: #666;
-  text-align: center;
-  margin: 0;
-  line-height: 1.5;
-  max-width: 400px;
-}
-
-.deploy-url-container {
-  width: 100%;
-  position: relative;
-  margin: 10px 0;
-}
-
-.deploy-url-input {
-  width: 100%;
-  padding: 12px 45px 12px 15px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  box-sizing: border-box;
-  background-color: #fafafa;
-}
-
-.copy-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-  color: #999;
-}
-
-.copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #333;
-}
-
-.deploy-success-buttons {
-  display: flex;
-  gap: 15px;
-  margin-top: 10px;
-}
-
-.visit-btn,
-.deploy-success-buttons .close-btn {
-  padding: 10px 30px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.visit-btn {
-  background-color: #1890ff;
-  color: white;
-  border-color: #1890ff;
-}
-
-.visit-btn:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
-}
-
-.deploy-success-buttons .close-btn {
-  background-color: white;
-  color: #1890ff;
-  border-color: #1890ff;
-  padding: 8px 20px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.deploy-success-buttons .close-btn:hover {
-  background-color: rgba(24, 144, 255, 0.05);
-  border-color: #40a9ff;
-  color: #40a9ff;
-}
-
 /* 响应式设计 */
 @media (max-width: var(--breakpoint-lg)) {
   .main-content {
@@ -1171,39 +1037,6 @@ onUnmounted(() => {
   .preview-section {
     width: 100%;
     height: 50%;
-  }
-
-  .delete-confirm-popup {
-    padding: 20px;
-    width: 300px;
-  }
-
-  .confirm-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .cancel-btn,
-  .confirm-btn {
-    width: 100%;
-    text-align: center;
-  }
-
-  /* 部署成功弹窗响应式 */
-  .deploy-success-popup {
-    padding: 20px;
-    width: 400px;
-  }
-
-  .deploy-success-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .visit-btn,
-  .deploy-success-buttons .close-btn {
-    width: 100%;
-    text-align: center;
   }
 }
 </style>

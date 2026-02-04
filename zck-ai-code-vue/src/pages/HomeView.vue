@@ -38,7 +38,7 @@
           </div>
           <div class="hero-examples">
             <span
-              v-for="(example, index) in examplePrompts.slice(0)"
+              v-for="(example, index) in examplePrompts.slice(1)"
               :key="index"
               class="hero-tag"
               @click="promptInput = example"
@@ -54,13 +54,39 @@
     <div v-if="loginUserStore.isLoggedIn()" class="apps-section w-full max-w-6xl mb-10">
       <h2 class="section-title text-center mb-6">我的作品</h2>
       <div class="apps-grid" v-if="myApps.length > 0">
-        <AppCard
+        <div
           v-for="app in myApps"
           :key="app.id"
-          :app="app"
-          @view-chat="goToAppChat"
-          @view-work="viewWork"
-        />
+          class="case-card"
+        >
+          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover || 'https://via.placeholder.com/400x300'})` }">
+            <div class="case-cover-actions">
+              <button
+                @click="goToAppChat(app.id!)"
+                class="btn-view-chat"
+              >
+                查看对话
+              </button>
+              <button
+                v-if="app.deployKey"
+                @click="viewWork(app.deployKey)"
+                class="btn-view-work"
+              >
+                查看作品
+              </button>
+            </div>
+          </div>
+          <div class="case-info">
+            <h3 class="case-name">{{ app.appName || '未命名应用' }}</h3>
+            <div class="case-meta">
+              <span class="author-name">{{ app.authorName || '我' }}</span>
+            </div>
+            <div class="case-footer">
+              <span class="programming-tag">编程号</span>
+              <span class="codefather-tag">codefather</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
         <p class="text-gray-500">暂无应用，开始创建您的第一个应用吧！</p>
@@ -121,13 +147,39 @@
 
       <!-- 案例卡片网格 -->
       <div class="apps-grid" v-if="featuredApps.length > 0">
-        <AppCard
+        <div
           v-for="app in featuredApps"
           :key="app.id"
-          :app="app"
-          @view-chat="goToAppChat"
-          @view-work="viewWork"
-        />
+          class="case-card"
+        >
+          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover})` }">
+            <div class="case-cover-actions">
+              <button
+                @click="goToAppChat(app.id!)"
+                class="btn-view-chat"
+              >
+                查看对话
+              </button>
+              <button
+                v-if="app.deployKey"
+                @click="viewWork(app.deployKey)"
+                class="btn-view-work"
+              >
+                查看作品
+              </button>
+            </div>
+          </div>
+          <div class="case-info">
+            <h3 class="case-name">{{ app.appName }}</h3>
+            <div class="case-meta">
+              <span class="author-name">{{ app.authorName }}</span>
+            </div>
+            <div class="case-footer">
+              <span class="programming-tag">编程号</span>
+              <span class="codefather-tag">codefather</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
         <p class="text-gray-500">暂无精选应用</p>
@@ -170,7 +222,6 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import api from '@/api'
 import { useLoginUserStore } from '@/stores/loginUser'
-import AppCard from '@/components/app/AppCard.vue'
 import '@/styles/home.styles.css'
 
 // 状态管理
@@ -187,16 +238,17 @@ const pageSize = 8
 const loading = ref(false)
 
 // 打字机效果相关变量
-const placeholderText = '请描述你想生成的网站，比如：创建一个现代企业官网，包含首页、关于我们、产品展示、联系我们等页面...'
+const placeholderText = '使用 NoCode 创建一个高效的小工具，帮我计算......'
 const typedPlaceholder = ref('')
 const isTyping = ref(true)
 
 // 示例提示词
 const examplePrompts = [
-  '现代企业官网',
-  '电商网站',
-  '搭建个人作品集网站',
-  '开发一个博客网站'
+  '使用 NoCode 创建一个高效的小工具，帮我计算...',
+  '波普风电商页面',
+  '企业网站',
+  '电商运营后台',
+  '暗黑话题社区'
 ]
 
 // 创建应用
@@ -289,8 +341,7 @@ const goToAppChat = (appId: string | number) => {
 const viewWork = (deployKey: string) => {
   // 确保在浏览器环境中执行
   if (typeof window !== 'undefined') {
-    const deployDomain = import.meta.env.VITE_DEPLOY_DOMAIN || 'http://localhost';
-    const url = `${deployDomain}/${deployKey}`;
+    const url = `http://localhost/${deployKey}`;
 
     try {
       // 测试window.open是否可用
