@@ -54,39 +54,13 @@
     <div v-if="loginUserStore.isLoggedIn()" class="apps-section w-full max-w-6xl mb-10">
       <h2 class="section-title text-center mb-6">我的作品</h2>
       <div class="apps-grid" v-if="myApps.length > 0">
-        <div
+        <AppCard
           v-for="app in myApps"
           :key="app.id"
-          class="case-card"
-        >
-          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover || 'https://via.placeholder.com/400x300'})` }">
-            <div class="case-cover-actions">
-              <button
-                @click="goToAppChat(app.id!)"
-                class="btn-view-chat"
-              >
-                查看对话
-              </button>
-              <button
-                v-if="app.deployKey"
-                @click="viewWork(app.deployKey)"
-                class="btn-view-work"
-              >
-                查看作品
-              </button>
-            </div>
-          </div>
-          <div class="case-info">
-            <h3 class="case-name">{{ app.appName || '未命名应用' }}</h3>
-            <div class="case-meta">
-              <span class="author-name">{{ app.authorName || '我' }}</span>
-            </div>
-            <div class="case-footer">
-              <span class="programming-tag">编程号</span>
-              <span class="codefather-tag">codefather</span>
-            </div>
-          </div>
-        </div>
+          :app="app"
+          @view-chat="goToAppChat"
+          @view-work="viewWork"
+        />
       </div>
       <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
         <p class="text-gray-500">暂无应用，开始创建您的第一个应用吧！</p>
@@ -147,39 +121,13 @@
 
       <!-- 案例卡片网格 -->
       <div class="apps-grid" v-if="featuredApps.length > 0">
-        <div
+        <AppCard
           v-for="app in featuredApps"
           :key="app.id"
-          class="case-card"
-        >
-          <div class="case-cover" :style="{ backgroundImage: `url(${app.cover})` }">
-            <div class="case-cover-actions">
-              <button
-                @click="goToAppChat(app.id!)"
-                class="btn-view-chat"
-              >
-                查看对话
-              </button>
-              <button
-                v-if="app.deployKey"
-                @click="viewWork(app.deployKey)"
-                class="btn-view-work"
-              >
-                查看作品
-              </button>
-            </div>
-          </div>
-          <div class="case-info">
-            <h3 class="case-name">{{ app.appName }}</h3>
-            <div class="case-meta">
-              <span class="author-name">{{ app.authorName }}</span>
-            </div>
-            <div class="case-footer">
-              <span class="programming-tag">编程号</span>
-              <span class="codefather-tag">codefather</span>
-            </div>
-          </div>
-        </div>
+          :app="app"
+          @view-chat="goToAppChat"
+          @view-work="viewWork"
+        />
       </div>
       <div class="empty-state text-center p-8 bg-white rounded-lg border border-gray-100" v-else>
         <p class="text-gray-500">暂无精选应用</p>
@@ -222,8 +170,8 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import api from '@/api'
 import { useLoginUserStore } from '@/stores/loginUser'
+import AppCard from '@/components/AppCard.vue'
 import '@/styles/home.styles.css'
-
 // 状态管理
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
