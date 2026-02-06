@@ -42,7 +42,8 @@ const checkResponseCode = (response: AxiosResponse): AxiosResponse => {
             !response.request.responseURL.includes('user/get/login') &&
             !window.location.pathname.includes('/user/login')) {
           message.warning(ERROR_MESSAGES[ErrorCode.NOT_LOGIN_ERROR])
-          window.location.href = `/user/login?redirect=${window.location.href}`
+          const redirectPath = encodeURIComponent(window.location.pathname + window.location.search)
+          window.location.href = `/user/login?redirect=${redirectPath}`
         }
         return response
 

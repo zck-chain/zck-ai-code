@@ -64,6 +64,17 @@
       <div class="chat-section">
         <!-- 消息区域 -->
         <div class="messages-container">
+          <!-- 加载更多按钮 -->
+          <div v-if="hasMoreHistory" class="load-more-container">
+            <button
+              @click="loadMoreHistory"
+              class="load-more-btn"
+              :disabled="loadingHistory"
+            >
+              {{ loadingHistory ? '加载中...' : '加载更多' }}
+            </button>
+          </div>
+
           <div
             v-for="message in messages"
             :key="message.id"
@@ -130,7 +141,7 @@
           <h2>生成的网站效果</h2>
         </div>
         <div class="preview-content">
-          <div v-if="!codeGenerated" class="preview-placeholder">
+          <div v-if="!codeGenerated && messages.length < 2" class="preview-placeholder">
             <p>网站文件生成中，请等待...</p>
           </div>
           <iframe
@@ -196,42 +207,110 @@ const showDeploySuccess = ref(false)
 const appCreatorName = ref('')
 const appCreateTime = ref('')
 const formattedCreateTime = ref('')
+// 对话历史相关状态
+const loadingHistory = ref(false)
+const hasMoreHistory = ref(false)
+const lastCreateTime = ref<string>('')
+const appInitPrompt = ref('')
 
 // 加载应用信息
-const loadAppInfo = async () => {
+const loadAppInfo = async (loadHistory: boolean) => {
+  console.log("loadAppInfo函数被调用，loadHistory:", loadHistory, "appId:", appId.value)
   try {
     const response = await api.appController.getAppById({
-      id: appId.value
+      id: appId.value // 直接使用字符串ID，避免类型转换
     })
 
     if (response.data.code === 0 && response.data.data) {
       const appData = response.data.data
       appName.value = appData.appName || '未命名应用'
       codeGenType.value = appData.codeGenType || ''
-      appCreatorName.value = appData.authorName || '未知'
+      appCreatorName.value = (appData as any).authorName || '未知'
       appCreateTime.value = appData.createTime || ''
       formattedCreateTime.value = formatDate(appData.createTime)
+      appInitPrompt.value = appData.initPrompt || ''
 
       // 权限校验：检查当前用户是否是应用的所有者
       if (loginUserStore.isLoggedIn()) {
         const currentUserId = loginUserStore.loginUser?.id || ''
-        const appOwnerId = (appData as any).authorId || ''
+        const appOwnerId = (appData as any).userId || ''
         isOwner.value = currentUserId === appOwnerId
       }
 
-      // 检查是否有 ?view=1 参数，如果没有则自动发送初始提示词
-      const viewParam = route.query.view as string
-      if (appData.initPrompt && viewParam !== '1') {
-        // 自动发送初始提示词给AI
-        await sendMessageToAI(appData.initPrompt)
+      // 加载对话历史
+      if (loadHistory) {
+        await loadChatHistory()
+        //展示最新的页面
+        await getWebsitePreviewUrl
+      } else {
+        await sendMessageToAI(appInitPrompt.value)
       }
     } else {
+      console.error('加载应用信息失败：' + response.data.message)
       message.error('加载应用信息失败：' + response.data.message)
     }
   } catch (error) {
     console.error('加载应用信息失败', error)
-    message.error('加载应用信息失败，请稍后重试')
+    throw error // 向上抛出错误，让调用方处理
   }
+}
+
+// 加载对话历史
+const loadChatHistory = async (loadMore = false) => {
+  try {
+    console.log('进入loadChatHistory函数，loadMore:', loadMore, 'appId:', appId.value)
+    loadingHistory.value = true
+    const response = await api.chatHistoryController.listAppChatHistory({
+      appId: appId.value as any,
+      pageSize: 10,
+      lastCreateTime: loadMore ? lastCreateTime.value : ''
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      const chatHistory = response.data.data.records || []
+      console.log('获取到对话历史记录数量:', chatHistory.length)
+
+      // 转换对话历史为前端消息格式
+      const newMessages = chatHistory.map((item: any) => ({
+        id: item.id,
+        content: item.message || '',
+        isUser: item.messageType === 'user'
+      }))
+
+      // 确保消息按时间顺序排列（老消息在前，新消息在后）
+      // 假设后端返回的是倒序排列（最新的在前），需要反转
+      const sortedMessages = newMessages.reverse()
+
+      // 如果是加载更多，添加到消息列表开头
+      if (loadMore) {
+        messages.value = [...sortedMessages, ...messages.value]
+      } else {
+        messages.value = sortedMessages
+      }
+
+      // 更新最后一条消息的创建时间，用于下一页加载
+      if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1]) {
+        lastCreateTime.value = chatHistory[chatHistory.length - 1].createTime || ''
+        hasMoreHistory.value = chatHistory.length === 10
+      } else {
+        hasMoreHistory.value = false
+      }
+    } else {
+      console.error('加载对话历史失败：' + response.data.message)
+      message.error('加载对话历史失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('加载对话历史失败', error)
+    message.error('加载对话历史失败，请稍后重试')
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+// 加载更多历史消息
+const loadMoreHistory = async () => {
+  if (!hasMoreHistory.value || loadingHistory.value) return
+  await loadChatHistory(true)
 }
 
 // 切换应用详情弹窗
@@ -278,7 +357,7 @@ const confirmDelete = async () => {
   try {
     // 调用删除应用的API
     const response = await api.appController.deleteApp({
-      id: appId.value
+      id: appId.value as any
     });
 
     if (response.data.code === 0 && response.data.data) {
@@ -379,6 +458,7 @@ const sendMessageToAI = async (userMessage: string) => {
       console.error('SSE连接错误', error)
       eventSource.value?.close()
       loading.value = false
+      message.error('与服务器连接失败，请稍后重试')
     }
   } catch (error) {
     console.error('发送消息失败', error)
@@ -399,7 +479,7 @@ const deployApp = async () => {
   try {
     deploying.value = true
     const response = await api.appController.deployApp({
-      appId: appId.value
+      appId: appId.value as any
     })
 
     if (response.data.code === 0 && response.data.data) {
@@ -442,56 +522,26 @@ const cleanupEventSource = () => {
   }
 }
 
-// 创建新应用
-const createNewApp = async (prompt: string) => {
-  try {
-    loading.value = true
-    const response = await api.appController.createApp({
-      initPrompt: prompt
-    })
-
-    if (response.data.code === 0 && response.data.data) {
-      appId.value = response.data.data
-      await loadAppInfo()
-    } else {
-      message.error('创建应用失败：' + response.data.message)
-      router.push('/')
-    }
-  } catch (error) {
-    console.error('创建应用失败', error)
-    message.error('创建应用失败，请稍后重试')
-    router.push('/')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 页面加载时初始化
 onMounted(async () => {
   const idParam = route.params.id as string
+  const isNewApp = route.query.view === '1'
+  // 确保appId使用字符串类型，避免精度丢失
+  appId.value = idParam
 
-  if (idParam === 'new') {
-    // 处理新应用创建
-    const prompt = route.query.prompt as string
-
-    if (!prompt) {
-      message.error('缺少创建应用的必要参数')
-      router.push('/')
-      return
-    }
-
-    // 检查登录状态
-    if (!loginUserStore.isLoggedIn()) {
-      const redirectPath = encodeURIComponent(`/app/chat/new?prompt=${encodeURIComponent(prompt)}`)
-      router.push(`/user/login?redirect=${redirectPath}`)
-      return
-    }
-
-    // 创建新应用
-    await createNewApp(prompt)
-  } else if (appId.value) {
-    // 加载现有应用
-    await loadAppInfo()
+  // 检查登录状态
+  if (!loginUserStore.isLoggedIn()) {
+    const redirectPath = encodeURIComponent(`/app/chat/${idParam}`)
+    router.push(`/user/login?redirect=${redirectPath}`)
+    return
+  }
+  // 加载应用信息和历史记录
+  try {
+    await loadAppInfo(isNewApp)
+  } catch (error) {
+    console.error('加载应用信息失败', error)
+    message.error('加载应用信息失败，请稍后重试')
+    router.push('/')
   }
 })
 
@@ -1057,6 +1107,36 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* 加载更多按钮样式 */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.load-more-btn {
+  padding: var(--spacing-xs) var(--spacing-lg);
+  background-color: var(--background-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.load-more-btn:disabled {
+  background-color: var(--background-light);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
 }
 
 /* 响应式设计 */

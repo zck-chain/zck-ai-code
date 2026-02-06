@@ -101,6 +101,12 @@ const originMenuItems = ref([
     path: '/admin/appManage',
     requiresAdmin: true,
   },
+  {
+    key: 'chatManage',
+    label: '对话管理',
+    path: '/admin/chatManage',
+    requiresAdmin: true,
+  },
 ])
 
 // 基于用户权限过滤后的菜单项
