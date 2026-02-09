@@ -7,6 +7,7 @@ import com.zck.aicodemother.model.dto.chatHistory.ChatHistoryQueryRequest;
 import com.zck.aicodemother.model.entity.App;
 import com.zck.aicodemother.model.entity.ChatHistory;
 import com.zck.aicodemother.model.entity.User;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 
 import java.time.LocalDateTime;
 
@@ -24,4 +25,6 @@ public interface ChatHistoryService extends IService<ChatHistory> {
     Page<ChatHistory> listAppChatHistoryByPage(Long appId, int pageSize,
                                                LocalDateTime lastCreateTime,
                                                User loginUser);
+
+    int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 }

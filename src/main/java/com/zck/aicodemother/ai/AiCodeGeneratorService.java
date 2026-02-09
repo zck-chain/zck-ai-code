@@ -2,7 +2,10 @@ package com.zck.aicodemother.ai;
 
 import com.zck.aicodemother.ai.model.HtmlCodeResult;
 import com.zck.aicodemother.ai.model.MultiFileCodeResult;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 /**

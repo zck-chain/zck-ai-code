@@ -43,8 +43,6 @@ import java.time.LocalDateTime;
 @Slf4j
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
     @Resource
-    private AppMapper appMapper;
-    @Resource
     private UserService userService;
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;

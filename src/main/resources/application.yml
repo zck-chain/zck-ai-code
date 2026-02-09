@@ -9,10 +9,26 @@ spring:
     url: jdbc:mysql://localhost:3306/zck_ai_code
     username: root
     password: zck1125
+  #redis
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:
+      ttl: 3600
+  # session配置
+  session:
+    store-type: redis
+    # session 30天过期
+    timeout: 2592000
 server:
   port: 8123
   servlet:
     context-path: /api
+    # cookie 30天过期
+    session:
+      cookie:
+        max-age: 2592000
 springdoc:
   group-configs:
     - group: 'default'
