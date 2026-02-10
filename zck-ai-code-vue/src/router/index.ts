@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../pages/HomeView.vue'
+import AboutView from '../pages/AboutView.vue'
+import ServicesView from '../pages/ServicesView.vue'
+import ContactView from '../pages/ContactView.vue'
 import UserLoginPage from '@/pages/user/UserLoginPage.vue'
 import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
@@ -14,6 +17,21 @@ const router = createRouter({
       path: '/',
       name: '主页',
       component: HomeView,
+    },
+    {
+      path: '/about',
+      name: '关于我们',
+      component: AboutView,
+    },
+    {
+      path: '/services',
+      name: '服务',
+      component: ServicesView,
+    },
+    {
+      path: '/contact',
+      name: '联系我们',
+      component: ContactView,
     },
     {
       path: '/user/login',

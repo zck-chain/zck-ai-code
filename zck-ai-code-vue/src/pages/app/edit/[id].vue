@@ -1,7 +1,7 @@
 <template>
   <div class="app-edit-container">
     <div class="page-header">
-      <button @click="router.back()" class="back-btn">返回</button>
+      <button @click="goBack" class="back-btn">返回</button>
       <h1>编辑应用信息</h1>
     </div>
 
@@ -147,11 +147,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import api from '@/api'
+import { useLoginUserStore } from '@/stores/loginUser'
 
 // 状态管理
 const route = useRoute()
 const router = useRouter()
+const loginUserStore = useLoginUserStore()
 const appId = ref<string>(route.params.id as string)
 const appName = ref('')
 const cover = ref('')
@@ -186,12 +189,12 @@ const loadAppInfo = async () => {
       updateTime.value = appData.updateTime || ''
       deployedTime.value = appData.deployedTime || ''
     } else {
-      alert('加载应用信息失败：' + response.data.message)
+      message.error('加载应用信息失败：' + response.data.message)
       router.push('/')
     }
   } catch (error) {
     console.error('加载应用信息失败', error)
-    alert('加载应用信息失败，请稍后重试')
+    message.error('加载应用信息失败，请稍后重试')
     router.push('/')
   } finally {
     loading.value = false
@@ -201,7 +204,7 @@ const loadAppInfo = async () => {
 // 保存修改
 const saveChanges = async () => {
   if (!appName.value.trim()) {
-    alert('请输入应用名称')
+    message.warning('请输入应用名称')
     return
   }
 
@@ -220,17 +223,27 @@ const saveChanges = async () => {
     const response = await api.appController.updateApp(updateData)
 
     if (response.data.code === 0 && response.data.data) {
-      alert('保存成功')
+      message.success('保存成功')
       // 重新加载数据
       loadAppInfo()
     } else {
-      alert('保存失败：' + response.data.message)
+      message.error('保存失败：' + response.data.message)
     }
   } catch (error) {
     console.error('保存失败', error)
-    alert('保存失败，请稍后重试')
+    message.error('保存失败，请稍后重试')
   } finally {
     loading.value = false
+  }
+}
+
+// 返回按钮功能
+const goBack = () => {
+  // 检查是否有来源页面，否则返回首页
+  if (document.referrer) {
+    router.back()
+  } else {
+    router.push('/')
   }
 }
 
@@ -241,7 +254,15 @@ const resetForm = () => {
 
 // 进入对话
 const enterChat = () => {
-  router.push(`/app/chat/${appId.value}`)
+  // 检查登录状态
+  if (!loginUserStore.isLoggedIn()) {
+    // 保存当前操作路径，登录后返回
+    const redirectPath = encodeURIComponent(`/app/chat/${appId.value}?view=1`)
+    router.push(`/user/login?redirect=${redirectPath}`)
+    return
+  }
+
+  router.push(`/app/chat/${appId.value}?view=1`)
 }
 
 // 页面加载时初始化

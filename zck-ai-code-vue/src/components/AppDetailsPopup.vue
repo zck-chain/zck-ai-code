@@ -188,7 +188,6 @@ const handleDelete = () => {
 
 .action-buttons {
   display: flex;
-  flex-direction: column;
   gap: var(--spacing-xs);
 }
 

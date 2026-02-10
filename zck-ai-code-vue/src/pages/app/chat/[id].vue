@@ -239,9 +239,10 @@ const loadAppInfo = async (loadHistory: boolean) => {
 
       // 加载对话历史
       if (loadHistory) {
-        await loadChatHistory()
+        await loadChatHistory();
         //展示最新的页面
-        await getWebsitePreviewUrl
+        codeGenerated.value = true;
+        await getWebsitePreviewUrl();
       } else {
         await sendMessageToAI(appInitPrompt.value)
       }
