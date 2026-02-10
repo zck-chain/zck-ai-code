@@ -1,5 +1,8 @@
 package com.zck.aicodemother.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -20,6 +23,7 @@ import java.io.File;
  */
 @RestController
 @RequestMapping("/static")
+@Tag(name = "StaticResourceController", description = "提供静态资源访问，支持目录重定向")
 public class StaticResourceController {
 
     // 应用生成根目录（用于浏览）
@@ -30,8 +34,9 @@ public class StaticResourceController {
      * 访问格式：http://localhost:8123/api/static/{deployKey}[/{fileName}]
      */
     @GetMapping("/{deployKey}/**")
+    @Operation(summary = "访问静态资源", description = "提供静态资源访问，支持目录重定向，默认返回index.html")
     public ResponseEntity<Resource> serveStaticResource(
-            @PathVariable String deployKey,
+            @Parameter(description = "部署密钥", required = true) @PathVariable String deployKey,
             HttpServletRequest request) {
         try {
             // 获取资源路径

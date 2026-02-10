@@ -19,6 +19,9 @@ import com.zck.aicodemother.model.entity.App;
 import com.zck.aicodemother.model.entity.User;
 import com.zck.aicodemother.service.AppService;
 import com.zck.aicodemother.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
@@ -37,6 +40,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/app")
+@Tag(name = "AppController", description = "提供应用创建、更新、删除、查询等功能")
 public class AppController {
 
     @Resource
@@ -47,6 +51,7 @@ public class AppController {
     // 【用户】创建应用（须填写 initPrompt）
     @PostMapping("/create")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "创建应用", description = "用户创建新应用，须填写 initPrompt")
     public BaseResponse<Long> createApp(@RequestBody AppAddRequest addAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(addAddRequest == null, ErrorCode.PARAMS_ERROR);
         long result = appService.createApp(addAddRequest, request);
@@ -56,6 +61,7 @@ public class AppController {
     // 【用户】根据 id 修改自己的应用（目前只支持修改应用名称）
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "更新应用", description = "用户修改自己的应用信息，目前只支持修改应用名称")
     public BaseResponse<Boolean> updateApp(@RequestBody AppUpdateRequest appUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appUpdateRequest == null || appUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
         boolean result = appService.updateApp(appUpdateRequest, request);
@@ -65,6 +71,7 @@ public class AppController {
     // 【用户】根据 id 删除自己的应用
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "删除应用", description = "用户删除自己的应用")
     public BaseResponse<Boolean> deleteApp(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
         boolean result = appService.deleteApp(deleteRequest.getId(), request);
@@ -74,7 +81,8 @@ public class AppController {
     // 【用户】根据 id 查看应用详情
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
-    public BaseResponse<App> getAppById(long id, HttpServletRequest request) {
+    @Operation(summary = "获取应用详情", description = "用户根据ID查看自己的应用详情")
+    public BaseResponse<App> getAppById(@Parameter(description = "应用ID", required = true) long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         App app = appService.getAppById(id, request);
         return ResultUtils.success(app);
@@ -83,6 +91,7 @@ public class AppController {
     // 【用户】分页查询自己的应用列表（支持根据名称查询，每页最多 20 个）
     @PostMapping("/list/my/page")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "查询我的应用列表", description = "用户分页查询自己的应用列表，支持根据名称查询，每页最多20个")
     public BaseResponse<Page<App>> listMyAppByPage(@RequestBody AppQueryRequest appQueryRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.listMyAppByPage(appQueryRequest, request);
@@ -91,6 +100,7 @@ public class AppController {
 
     // 【用户】分页查询精选的应用列表（支持根据名称查询，每页最多 20 个）
     @PostMapping("/list/featured/page")
+    @Operation(summary = "查询精选应用列表", description = "分页查询精选的应用列表，支持根据名称查询，每页最多20个")
     public BaseResponse<Page<App>> listFeaturedAppByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.listFeaturedAppByPage(appQueryRequest);
@@ -100,6 +110,7 @@ public class AppController {
     // 【管理员】根据 id 删除任意应用
     @PostMapping("/admin/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员删除应用", description = "管理员根据ID删除任意应用")
     public BaseResponse<Boolean> adminDeleteApp(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
         boolean result = appService.adminDeleteApp(deleteRequest.getId());
@@ -109,6 +120,7 @@ public class AppController {
     // 【管理员】根据 id 更新任意应用（支持更新应用名称、应用封面、优先级）
     @PostMapping("/admin/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员更新应用", description = "管理员更新任意应用信息，支持更新应用名称、应用封面、优先级")
     public BaseResponse<Boolean> adminUpdateApp(@RequestBody AppUpdateRequest appUpdateRequest) {
         ThrowUtils.throwIf(appUpdateRequest == null || appUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
         boolean result = appService.adminUpdateApp(appUpdateRequest);
@@ -118,6 +130,7 @@ public class AppController {
     // 【管理员】分页查询应用列表（支持根据除时间外的任何字段查询，每页数量不限）
     @PostMapping("/admin/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员查询应用列表", description = "管理员分页查询所有应用列表，支持根据除时间外的任何字段查询，每页数量不限")
     public BaseResponse<Page<App>> adminListAppByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.adminListAppByPage(appQueryRequest);
@@ -127,14 +140,16 @@ public class AppController {
     // 【管理员】根据 id 查看应用详情
     @GetMapping("/admin/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<App> adminGetAppById(long id) {
+    @Operation(summary = "管理员获取应用详情", description = "管理员根据ID查看任意应用详情")
+    public BaseResponse<App> adminGetAppById(@Parameter(description = "应用ID", required = true) long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         App app = appService.adminGetAppById(id);
         return ResultUtils.success(app);
     }
 
     @GetMapping(value="/chat/gen/code",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam String message,  @RequestParam Long appId,HttpServletRequest request) {
+    @Operation(summary = "生成代码", description = "通过对话方式生成代码，流式返回结果")
+    public Flux<ServerSentEvent<String>> chatToGenCode(@Parameter(description = "生成代码的描述", required = true) @RequestParam String message,  @Parameter(description = "应用ID", required = true) @RequestParam Long appId, HttpServletRequest request) {
         //参数校验
         ThrowUtils.throwIf(appId==null || appId<0, ErrorCode.PARAMS_ERROR,"应用ID无效");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR,"请输入生成代码的描述");
@@ -168,6 +183,7 @@ public class AppController {
      * @return 部署 URL
      */
     @PostMapping("/deploy")
+    @Operation(summary = "部署应用", description = "部署应用并返回部署 URL")
     public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
         Long appId = appDeployRequest.getAppId();

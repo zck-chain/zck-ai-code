@@ -14,6 +14,9 @@ import com.zck.aicodemother.model.entity.ChatHistory;
 import com.zck.aicodemother.model.entity.User;
 import com.zck.aicodemother.service.ChatHistoryService;
 import com.zck.aicodemother.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/chatHistory")
+@Tag(name = "ChatHistoryController", description = "提供对话历史查询、管理等功能")
 public class ChatHistoryController {
 
     @Resource
@@ -46,9 +50,10 @@ public class ChatHistoryController {
      * @return 对话历史分页
      */
     @GetMapping("/app/{appId}")
-    public BaseResponse<Page<ChatHistory>> listAppChatHistory(@PathVariable Long appId,
-                                                              @RequestParam(defaultValue = "10") int pageSize,
-                                                              @RequestParam(required = false) LocalDateTime lastCreateTime,
+    @Operation(summary = "查询应用对话历史", description = "分页查询某个应用的对话历史，支持游标查询")
+    public BaseResponse<Page<ChatHistory>> listAppChatHistory(@Parameter(description = "应用ID", required = true) @PathVariable Long appId,
+                                                              @Parameter(description = "页面大小", required = false) @RequestParam(defaultValue = "10") int pageSize,
+                                                              @Parameter(description = "最后一条记录的创建时间", required = false) @RequestParam(required = false) LocalDateTime lastCreateTime,
                                                               HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         Page<ChatHistory> result = chatHistoryService.listAppChatHistoryByPage(appId, pageSize, lastCreateTime, loginUser);
@@ -63,6 +68,7 @@ public class ChatHistoryController {
      */
     @PostMapping("/admin/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员查询所有对话历史", description = "管理员分页查询所有对话历史记录")
     public BaseResponse<Page<ChatHistory>> listAllChatHistoryByPageForAdmin(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
         ThrowUtils.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long pageNum = chatHistoryQueryRequest.getPageNum();

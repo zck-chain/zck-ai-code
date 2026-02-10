@@ -14,6 +14,9 @@ import com.zck.aicodemother.model.dto.user.*;
 import com.zck.aicodemother.model.enums.UserRoleEnum;
 import com.zck.aicodemother.model.vo.LoginUserVO;
 import com.zck.aicodemother.model.vo.UserVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/user")
+@Tag(name = "UserController", description = "提供用户注册、登录、查询等功能")
 public class UserController {
 
     @Autowired
@@ -37,6 +41,7 @@ public class UserController {
 
     //注册用户
     @PostMapping("/register")
+    @Operation(summary = "注册用户", description = "用户注册新账号")
     public BaseResponse<Long> register(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
         String userAccount = userRegisterRequest.getUserAccount();
@@ -47,6 +52,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "用户登录", description = "用户登录系统并获取登录信息")
     public BaseResponse<LoginUserVO> login(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR);
         String userAccount = userLoginRequest.getUserAccount();
@@ -57,6 +63,7 @@ public class UserController {
 
     @GetMapping("/get/login")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "获取当前登录用户", description = "获取当前登录用户的详细信息")
     public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(userService.getLoginUserVO(loginUser));
@@ -64,12 +71,12 @@ public class UserController {
 
     @GetMapping("/logout")
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "用户登出", description = "用户登出系统")
     public BaseResponse<Boolean> logout(HttpServletRequest request) {
         ThrowUtils.throwIf(request==null,ErrorCode.PARAMS_ERROR);
         boolean result = userService.userLogout(request);
         return ResultUtils.success(result);
     }
-
 
 
     /**
@@ -80,6 +87,7 @@ public class UserController {
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员创建用户", description = "管理员创建新用户，默认密码为123456")
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
         ThrowUtils.throwIf(userAddRequest==null,ErrorCode.PARAMS_ERROR);
         User user = new User();
@@ -100,7 +108,8 @@ public class UserController {
      */
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<User> getUserById(long id) {
+    @Operation(summary = "管理员获取用户详情", description = "管理员根据ID获取用户详细信息")
+    public BaseResponse<User> getUserById(@Parameter(description = "用户ID", required = true) long id) {
         ThrowUtils.throwIf(id<=0,ErrorCode.PARAMS_ERROR);
         User user = userService.getById(id);
         ThrowUtils.throwIf(user==null,ErrorCode.NOT_FOUND_ERROR);
@@ -108,7 +117,8 @@ public class UserController {
     }
 
     @GetMapping("/get/vo")
-    public BaseResponse<UserVO> getUserInfoVo(long id) {
+    @Operation(summary = "获取用户信息VO", description = "根据用户ID获取用户信息VO对象")
+    public BaseResponse<UserVO> getUserInfoVo(@Parameter(description = "用户ID", required = true) long id) {
         BaseResponse<User> response = getUserById(id);
         User user = response.getData();
         return ResultUtils.success(userService.getUserVO(user));
@@ -122,6 +132,7 @@ public class UserController {
      */
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员删除用户", description = "管理员根据ID删除用户")
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtils.throwIf(deleteRequest==null || deleteRequest.getId()<=0,ErrorCode.PARAMS_ERROR);
         return ResultUtils.success(userService.removeById(deleteRequest.getId()));
@@ -135,6 +146,7 @@ public class UserController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员更新用户", description = "管理员根据ID更新用户信息")
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         ThrowUtils.throwIf(userUpdateRequest==null || userUpdateRequest.getId()<=0,ErrorCode.PARAMS_ERROR);
         User user = new User();
@@ -151,6 +163,7 @@ public class UserController {
      */
     @PostMapping("/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员分页查询用户", description = "管理员分页获取用户封装列表，支持数据脱敏")
     public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtils.throwIf(userQueryRequest==null,ErrorCode.PARAMS_ERROR);
         int pageNum = userQueryRequest.getPageNum();
