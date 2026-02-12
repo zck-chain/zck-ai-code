@@ -13,9 +13,14 @@ import reactor.core.publisher.Flux;
  * @date 2026/1/22
  */
 public interface AiCodeGeneratorService {
+    /*
+    * 生成Vue项目代码（流式）
+    * */
+    @SystemMessage(fromResource = "prompt/codegen-vue-project-system-prompt.txt")
+    Flux<String> generateVueProjectCodeStream(@MemoryId long appId,@UserMessage String userMessage);
 
     /**
-     * 生成HTML代码
+     * 生成HTML代码流式
      * @param userMessage 用户消息
      * @return 生成代码结果
      */
@@ -23,7 +28,7 @@ public interface AiCodeGeneratorService {
     Flux<String> generateHtmlCodeStream(String userMessage);
 
     /**
-     * 生成多文件html css js代码
+     * 生成多文件html css js代码流式
      * @param userMessage
      * @return 生成代码结果
      */

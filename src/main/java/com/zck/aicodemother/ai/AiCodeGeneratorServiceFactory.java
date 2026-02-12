@@ -2,8 +2,13 @@ package com.zck.aicodemother.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.zck.aicodemother.ai.tool.FileWriteTool;
+import com.zck.aicodemother.exception.BusinessException;
+import com.zck.aicodemother.exception.ErrorCode;
+import com.zck.aicodemother.model.enums.CodeGenTypeEnum;
 import com.zck.aicodemother.service.ChatHistoryService;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -25,7 +30,10 @@ public class AiCodeGeneratorServiceFactory {
     @Resource
     private ChatModel chatModel;
     @Resource
-    private StreamingChatModel steamingChatModel;
+    private StreamingChatModel openAiStreamingChatModel;
+
+    @Resource
+    private StreamingChatModel reasoningStreamingChatModel;
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;
     @Resource
@@ -37,7 +45,7 @@ public class AiCodeGeneratorServiceFactory {
      * -写入后30分钟过期
      * -访问后10分钟过期
      */
-    private final Cache<Long,AiCodeGeneratorService> serviceCache= Caffeine.newBuilder()
+    private final Cache<String,AiCodeGeneratorService> serviceCache= Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
             .expireAfterAccess(Duration.ofMinutes(10))
@@ -46,29 +54,75 @@ public class AiCodeGeneratorServiceFactory {
             })
             .build();
 
+    public AiCodeGeneratorService getAiCodeGeneratorService(long appId){
+        return getAiCodeGeneratorService(appId,CodeGenTypeEnum.HTML);
+    }
+
     /*
     * 根据appId获取服务（带缓存）
     * */
-    public AiCodeGeneratorService getAiCodeGeneratorService(long appId){
-        return serviceCache.get(appId,this::createAiCodeGeneratorService);
+    public AiCodeGeneratorService getAiCodeGeneratorService(long appId,CodeGenTypeEnum codeGenTypeEnum){
+        String cacheKey=buildCacheKey(appId,codeGenTypeEnum);
+        return serviceCache.get(cacheKey,key->createAiCodeGeneratorService(appId,codeGenTypeEnum));
     }
 
-    private AiCodeGeneratorService createAiCodeGeneratorService(long appId){
-        log.info("为appId:{}创建新的AI服务实例",appId);
-        //根据appId构建独立的对话记忆
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory
-                .builder()
+    /**
+     * 构建缓存键
+     * @param appId
+     * @param codeGenTypeEnum
+     * @return
+     */
+    private String buildCacheKey(long appId, CodeGenTypeEnum codeGenTypeEnum) {
+        return appId+"_"+codeGenTypeEnum.getValue();
+    }
+
+//    private AiCodeGeneratorService createAiCodeGeneratorService(long appId){
+//        log.info("为appId:{}创建新的AI服务实例",appId);
+//        //根据appId构建独立的对话记忆
+//        MessageWindowChatMemory chatMemory = MessageWindowChatMemory
+//                .builder()
+//                .id(appId)
+//                .chatMemoryStore(redisChatMemoryStore)
+//                .maxMessages(20)
+//                .build();
+//        //从数据库加载历史对话到记忆中
+//        chatHistoryService.loadChatHistoryToMemory(appId,chatMemory,20);
+//        return AiServices.builder(AiCodeGeneratorService.class)
+//                .chatModel(chatModel)
+//                .streamingChatModel(openAiStreamingChatModel)
+//                .chatMemory(chatMemory)
+//                .build();
+//    }
+
+    /*
+    * 创建新的AI服务实例
+    * */
+    private AiCodeGeneratorService createAiCodeGeneratorService(long appId, CodeGenTypeEnum codeGenTypeEnum){
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .id(appId)
                 .chatMemoryStore(redisChatMemoryStore)
                 .maxMessages(20)
                 .build();
-        //从数据库加载历史对话到记忆中
+        //从数据库加载历史记录到记忆中
         chatHistoryService.loadChatHistoryToMemory(appId,chatMemory,20);
-        return AiServices.builder(AiCodeGeneratorService.class)
-                .chatModel(chatModel)
-                .streamingChatModel(steamingChatModel)
-                .chatMemory(chatMemory)
-                .build();
+        return switch (codeGenTypeEnum){
+            //vue项目生成使用推理模型
+            case VUE_PROJECT->AiServices.builder(AiCodeGeneratorService.class)
+                    .streamingChatModel(reasoningStreamingChatModel)
+                    .chatMemoryProvider(memoryId-> chatMemory)
+                    .tools(new FileWriteTool())
+                    .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                            toolExecutionRequest,"Error: there is no tool called"+toolExecutionRequest.name()
+                    ))
+                    .build();
+            //HTML 和多文件生成使用默认模型
+            case HTML,MULTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
+                    .chatModel(chatModel)
+                    .streamingChatModel(openAiStreamingChatModel)
+                    .chatMemory(chatMemory)
+                    .build();
+            default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR,"不支持的代码生成类型"+codeGenTypeEnum.getValue());
+        };
     }
 
 }
