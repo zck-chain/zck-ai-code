@@ -9,7 +9,7 @@ public class AppConstant {
     /**
      * 应用生成目录
      */
-    public static final String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";;
+    public static final String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
 
     /**
      * 应用部署目录

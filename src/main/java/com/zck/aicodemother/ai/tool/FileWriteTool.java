@@ -35,16 +35,18 @@ public class FileWriteTool {
             if (parentDir!=null) {
                 Files.createDirectories(parentDir);
             }
+            //写入文件
+            Files.write(path,content.getBytes(),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+            log.info("文件写入成功:{}",path.toAbsolutePath());
+            //注意返回相对路径,不能让AI把文件绝对路径返回给用户
+            return "文件写入成功:"+relativeFilePath;
         }catch (IOException e){
              String errorMessage="文件写入失败:"+path.toAbsolutePath()+"，错误信息:"+e.getMessage();
+             log.error(errorMessage,e);
+             return errorMessage;
         }
 
-        //写入文件
-        Files.write(path,content.getBytes(),
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING);
-        log.info("文件写入成功:{}",path.toAbsolutePath());
-        //注意返回相对路径,不能让AI把文件绝对路径返回给用户
-        return "文件写入成功:"+relativeFilePath;
     }
 }

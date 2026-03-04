@@ -15,7 +15,6 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
@@ -98,6 +97,7 @@ public class AiCodeGeneratorServiceFactory {
     * 创建新的AI服务实例
     * */
     private AiCodeGeneratorService createAiCodeGeneratorService(long appId, CodeGenTypeEnum codeGenTypeEnum){
+        //根据appId构建独立的对话记忆
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .id(appId)
                 .chatMemoryStore(redisChatMemoryStore)

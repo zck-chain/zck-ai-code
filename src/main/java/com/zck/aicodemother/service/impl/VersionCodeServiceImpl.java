@@ -210,13 +210,12 @@ public class VersionCodeServiceImpl extends ServiceImpl<VersionCodeMapper, Versi
         int endNew = Math.min(newLines.size(),
                 delta.getRevised().getPosition() + delta.getRevised().size() + contextLines);
 
-        StringBuilder context = new StringBuilder();
-        context.append("上下文变更:\n");
-        context.append("原始代码行 ").append(startOld + 1).append("-").append(endOld)
-                .append("\n");
-        context.append("新代码行 ").append(startNew + 1).append("-").append(endNew);
+        String context = "上下文变更:\n" +
+                "原始代码行 " + (startOld + 1) + "-" + endOld +
+                "\n" +
+                "新代码行 " + (startNew + 1) + "-" + endNew;
 
-        return context.toString();
+        return context;
     }
 
     /**
