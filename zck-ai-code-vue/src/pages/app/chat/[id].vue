@@ -170,6 +170,7 @@ import 'highlight.js/styles/github.css'
 import AppDetailsPopup from '@/components/AppDetailsPopup.vue'
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue'
 import DeploySuccessDialog from '@/components/DeploySuccessDialog.vue'
+import { CodeGenTypeEnum } from '@/config/codeGenType'
 
 // 配置marked使用highlight.js进行代码高亮
 marked.setOptions({
@@ -511,7 +512,11 @@ const closeDeploySuccess = () => {
 
 // 生成网站预览URL
 const getWebsitePreviewUrl = () => {
+
   if (!codeGenerated.value || !codeGenType.value) return ''
+  if (codeGenType.value===CodeGenTypeEnum.VUE_PROJECT) {
+    return `${API_CONFIG.BASE_URL}/static/${codeGenType.value}_${appId.value}/dist/index.html`
+  }
   return `${API_CONFIG.BASE_URL}/static/${codeGenType.value}_${appId.value}/`
 }
 

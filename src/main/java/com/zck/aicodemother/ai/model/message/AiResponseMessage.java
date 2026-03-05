@@ -16,7 +16,7 @@ public class AiResponseMessage extends StreamMessage{
     private String data;
 
     public AiResponseMessage(String data) {
-//        super(StreamMessageTypeE.AI_RESPONSE);
+        super(StreamMessageTypeEnum.AI_RESPONSE.getValue());
         this.data = data;
     }
 }

@@ -8,6 +8,8 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.zck.aicodemother.constant.AppConstant;
 import com.zck.aicodemother.core.AiCodeGeneratorFacade;
+import com.zck.aicodemother.core.builder.VueProjectBuilder;
+import com.zck.aicodemother.core.handler.StreamHandlerExecutor;
 import com.zck.aicodemother.exception.BusinessException;
 import com.zck.aicodemother.exception.ErrorCode;
 import com.zck.aicodemother.exception.ThrowUtils;
@@ -48,6 +50,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
     @Resource
     private ChatHistoryService chatHistoryService;
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
 
     @Override
     public long createApp(AppAddRequest appCreateRequest, HttpServletRequest request) {
@@ -62,7 +68,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = App.builder()
                 .appName(initPrompt.substring(0,Math.min(initPrompt.length(), 12)))
                 .initPrompt(initPrompt)
-                .codeGenType(CodeGenTypeEnum.MULTI_FILE.getValue())
+                .codeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue())
                 .userId(loginUser.getId())
                 .build();
 
@@ -362,25 +368,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         //5.通过校验后，添加用户消息到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(),loginUser.getId());
         //6.调用ai生成代码
-        Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
         //7.收集AI响应内容并在完成后记录到对话历史记录
-        StringBuilder aiResponseBuilder = new StringBuilder();
-        //
-        return contentFlux.map(chunk->{
-            //收集AI响应内容
-            aiResponseBuilder.append(chunk);
-            return chunk;
-        }).doOnComplete(()->{
-            //流式响应完成后，添加AI响应内容到对话历史记录
-            String aiResponse = aiResponseBuilder.toString();
-            if (StrUtil.isNotBlank(aiResponse)) {
-                chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(),loginUser.getId());
-            }
-        }).doOnError(error->{
-            //如果AI回复失败,也要记录错误消息
-            String errorMessage="AI回复失败:"+error.getMessage();
-            chatHistoryService.addChatMessage(appId, errorMessage, ChatHistoryMessageTypeEnum.AI.getValue(),loginUser.getId());
-        });
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService ,appId, loginUser,codeGenTypeEnum);
     }
 
     @Override
@@ -411,6 +401,18 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"应用代码不存在,请先生成代码");
         }
         //7.复制文件到部署目录
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum== CodeGenTypeEnum.VUE_PROJECT) {
+            //vue项目需要构建
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess,ErrorCode.SYSTEM_ERROR,"Vue构建项目失败,请检查代码和依赖");
+            //检查dist目录是否存在
+            File distDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!distDir.exists(),ErrorCode.SYSTEM_ERROR,"Vue构建完成但未生成dist目录");
+            //将dist目录作为部署源
+            sourceDir = distDir;
+            log.info("vue项目构建完成,将dist目录作为部署源");
+        }
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceDir,new File(deployDirPath),true);

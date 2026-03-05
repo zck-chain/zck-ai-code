@@ -1,5 +1,7 @@
 package com.zck.aicodemother.constant;
 
+import java.io.File;
+
 /**
  * @author 赵承康
  * @date 2026/1/28
@@ -14,7 +16,7 @@ public class AppConstant {
     /**
      * 应用部署目录
      */
-    public static final String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_deploy";
+    public static final String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "tmp/code_deploy";
 
     /**
      * 应用部署域名
