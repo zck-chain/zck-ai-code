@@ -16,7 +16,7 @@ public class AppConstant {
     /**
      * 应用部署目录
      */
-    public static final String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "tmp/code_deploy";
+    public static final String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_deploy";
 
     /**
      * 应用部署域名

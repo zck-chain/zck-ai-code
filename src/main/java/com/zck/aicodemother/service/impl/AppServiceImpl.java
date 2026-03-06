@@ -68,7 +68,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = App.builder()
                 .appName(initPrompt.substring(0,Math.min(initPrompt.length(), 12)))
                 .initPrompt(initPrompt)
-                .codeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue())
+                .codeGenType(CodeGenTypeEnum.HTML.getValue())
                 .userId(loginUser.getId())
                 .build();
 

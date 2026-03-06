@@ -141,7 +141,7 @@
           <h2>生成的网站效果</h2>
         </div>
         <div class="preview-content">
-          <div v-if="!codeGenerated && messages.length < 2" class="preview-placeholder">
+          <div v-if="!codeGenerated" class="preview-placeholder">
             <p>网站文件生成中，请等待...</p>
           </div>
           <iframe
@@ -174,15 +174,77 @@ import { CodeGenTypeEnum } from '@/config/codeGenType'
 
 // 配置marked使用highlight.js进行代码高亮
 marked.setOptions({
-  langPrefix: 'hljs language-',
+  langPrefix: 'language-',
   breaks: true,
   gfm: true
 } as any)
 
-// 渲染Markdown内容
+// 渲染Markdown内容，支持代码高亮（性能优化版）
 const renderMarkdown = (content: string) => {
   if (!content) return ''
-  return marked(content)
+
+  // 快速路径：如果没有代码块，直接返回
+  if (!content.includes('```')) {
+    return marked(content)
+  }
+
+  const html = marked(content)
+
+  // 减少DOM操作：使用正则表达式处理代码块
+  let processedHtml = html
+
+  // 匹配代码块：<pre><code class="language-xxx">...</code></pre>
+  processedHtml = processedHtml.replace(/<pre><code\s+class="language-(\w+)">(.*?)<\/code><\/pre>/gs, (match, language, code) => {
+    // 解码HTML实体
+    const decodedCode = code
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
+    let highlightedCode = ''
+    if (language && hljs.getLanguage(language)) {
+      try {
+        highlightedCode = hljs.highlight(decodedCode, { language }).value
+      } catch (e) {
+        console.warn('代码高亮失败:', e)
+        highlightedCode = decodedCode
+      }
+    } else {
+      try {
+        highlightedCode = hljs.highlightAuto(decodedCode).value
+      } catch (e) {
+        console.warn('代码高亮失败:', e)
+        highlightedCode = decodedCode
+      }
+    }
+
+    return `<pre><code class="language-${language} hljs">${highlightedCode}</code></pre>`
+  })
+
+  // 处理没有指定语言的代码块
+  processedHtml = processedHtml.replace(/<pre><code>(.*?)<\/code><\/pre>/gs, (match, code) => {
+    // 解码HTML实体
+    const decodedCode = code
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
+    let highlightedCode = ''
+    try {
+      highlightedCode = hljs.highlightAuto(decodedCode).value
+    } catch (e) {
+      console.warn('代码高亮失败:', e)
+      highlightedCode = decodedCode
+    }
+
+    return `<pre><code class="hljs">${highlightedCode}</code></pre>`
+  })
+
+  return processedHtml
 }
 
 // 状态管理
@@ -418,21 +480,7 @@ const sendMessageToAI = async (userMessage: string) => {
         if (data) {
           // 解析JSON数据，提取实际内容
           const parsedData = JSON.parse(data)
-          let actualContent = parsedData.d
-
-          // 处理代码块格式，确保使用正确的Markdown标记
-          // 处理HTML代码块
-          actualContent = actualContent.replace(/```html([\s\S]*?)```/g, '\n```html\n$1\n```\n')
-          // 处理CSS代码块
-          actualContent = actualContent.replace(/```css([\s\S]*?)```/g, '\n```css\n$1\n```\n')
-          // 处理JavaScript代码块
-          actualContent = actualContent.replace(/```javascript([\s\S]*?)```/g, '\n```javascript\n$1\n```\n')
-          // 处理可能的HTML代码块标记问题
-          actualContent = actualContent.replace(/"""html/g, '```html')
-          actualContent = actualContent.replace(/"""css/g, '```css')
-          actualContent = actualContent.replace(/"""javascript/g, '```javascript')
-          actualContent = actualContent.replace(/"""/g, '```')
-
+          const actualContent = parsedData.d
           // 累加AI回复内容
           aiResponse += actualContent
 

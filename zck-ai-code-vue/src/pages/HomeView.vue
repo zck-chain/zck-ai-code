@@ -19,6 +19,7 @@
               :placeholder="typedPlaceholder + (isTyping ? '|' : '')"
               class="hero-textarea"
               rows="2"
+              @keyup.enter="createApp"
             ></textarea>
             <div class="input-actions flex gap-2">
               <button class="action-btn">
