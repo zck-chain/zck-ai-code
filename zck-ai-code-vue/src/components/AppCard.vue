@@ -1,6 +1,25 @@
+<script setup lang="ts">
+const getCoverUrl = (cover?: string) => {
+  if (!cover) return ''
+  if (cover.startsWith('http://') || cover.startsWith('https://')) {
+    return cover
+  }
+  return `https://${cover}`
+}
+
+defineProps<{
+  app: API.App
+}>()
+
+defineEmits<{
+  (e: 'view-chat', appId: string | number): void
+  (e: 'view-work', deployKey: string): void
+}>()
+</script>
+
 <template>
   <div class="case-card">
-    <div class="case-cover" :style="{ backgroundImage: `url(${app.cover || 'https://via.placeholder.com/400x300'})` }">
+    <div class="case-cover" :style="{ backgroundImage: `url(${getCoverUrl(app.cover) || 'https://via.placeholder.com/400x300'})` }">
       <div class="case-cover-actions">
         <button
           @click="app.id && $emit('view-chat', app.id)"
@@ -29,17 +48,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-defineProps<{
-  app: API.App
-}>()
-
-defineEmits<{
-  (e: 'view-chat', appId: string | number): void
-  (e: 'view-work', deployKey: string): void
-}>()
-</script>
 
 <style scoped>
 .case-card {
