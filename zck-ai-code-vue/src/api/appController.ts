@@ -2,7 +2,7 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 POST /app/admin/delete */
+/** 管理员删除应用 管理员根据ID删除任意应用 POST /app/admin/delete */
 export async function adminDeleteApp(body: API.DeleteRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/admin/delete', {
     method: 'POST',
@@ -14,7 +14,7 @@ export async function adminDeleteApp(body: API.DeleteRequest, options?: { [key: 
   })
 }
 
-/** 此处后端没有提供注释 GET /app/admin/get */
+/** 管理员获取应用详情 管理员根据ID查看任意应用详情 GET /app/admin/get */
 export async function adminGetAppById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.adminGetAppByIdParams,
@@ -29,7 +29,7 @@ export async function adminGetAppById(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/admin/list/page */
+/** 管理员查询应用列表 管理员分页查询所有应用列表，支持根据除时间外的任何字段查询，每页数量不限 POST /app/admin/list/page */
 export async function adminListAppByPage(
   body: API.AppQueryRequest,
   options?: { [key: string]: any }
@@ -44,7 +44,7 @@ export async function adminListAppByPage(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/admin/update */
+/** 管理员更新应用 管理员更新任意应用信息，支持更新应用名称、应用封面、优先级 POST /app/admin/update */
 export async function adminUpdateApp(body: API.AppUpdateRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/admin/update', {
     method: 'POST',
@@ -56,7 +56,7 @@ export async function adminUpdateApp(body: API.AppUpdateRequest, options?: { [ke
   })
 }
 
-/** 此处后端没有提供注释 GET /app/chat/gen/code */
+/** 生成代码 通过对话方式生成代码，流式返回结果 GET /app/chat/gen/code */
 export async function chatToGenCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.chatToGenCodeParams,
@@ -71,7 +71,7 @@ export async function chatToGenCode(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/create */
+/** 创建应用 用户创建新应用，须填写 initPrompt POST /app/create */
 export async function createApp(body: API.AppAddRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseLong>('/app/create', {
     method: 'POST',
@@ -83,7 +83,7 @@ export async function createApp(body: API.AppAddRequest, options?: { [key: strin
   })
 }
 
-/** 此处后端没有提供注释 POST /app/delete */
+/** 删除应用 用户删除自己的应用 POST /app/delete */
 export async function deleteApp(body: API.DeleteRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/delete', {
     method: 'POST',
@@ -95,7 +95,7 @@ export async function deleteApp(body: API.DeleteRequest, options?: { [key: strin
   })
 }
 
-/** 此处后端没有提供注释 POST /app/deploy */
+/** 部署应用 部署应用并返回部署 URL POST /app/deploy */
 export async function deployApp(body: API.AppDeployRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/app/deploy', {
     method: 'POST',
@@ -107,7 +107,21 @@ export async function deployApp(body: API.AppDeployRequest, options?: { [key: st
   })
 }
 
-/** 此处后端没有提供注释 GET /app/get */
+/** 此处后端没有提供注释 GET /app/download/${param0} */
+export async function downloadAppCode(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.downloadAppCodeParams,
+  options?: { [key: string]: any }
+) {
+  const { appId: param0, ...queryParams } = params
+  return request<any>(`/app/download/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
+
+/** 获取应用详情 用户根据ID查看自己的应用详情 GET /app/get */
 export async function getAppById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getAppByIdParams,
@@ -122,7 +136,7 @@ export async function getAppById(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/list/featured/page */
+/** 查询精选应用列表 分页查询精选的应用列表，支持根据名称查询，每页最多20个 POST /app/list/featured/page */
 export async function listFeaturedAppByPage(
   body: API.AppQueryRequest,
   options?: { [key: string]: any }
@@ -137,7 +151,7 @@ export async function listFeaturedAppByPage(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/list/my/page */
+/** 查询我的应用列表 用户分页查询自己的应用列表，支持根据名称查询，每页最多20个 POST /app/list/my/page */
 export async function listMyAppByPage(body: API.AppQueryRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponsePageApp>('/app/list/my/page', {
     method: 'POST',
@@ -149,7 +163,7 @@ export async function listMyAppByPage(body: API.AppQueryRequest, options?: { [ke
   })
 }
 
-/** 此处后端没有提供注释 POST /app/update */
+/** 更新应用 用户修改自己的应用信息，目前只支持修改应用名称 POST /app/update */
 export async function updateApp(body: API.AppUpdateRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/update', {
     method: 'POST',

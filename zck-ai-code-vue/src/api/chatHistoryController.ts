@@ -2,7 +2,7 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 POST /chatHistory/admin/list/page/vo */
+/** 管理员查询所有对话历史 管理员分页查询所有对话历史记录 POST /chatHistory/admin/list/page/vo */
 export async function listAllChatHistoryByPageForAdmin(
   body: API.ChatHistoryQueryRequest,
   options?: { [key: string]: any }
@@ -17,7 +17,7 @@ export async function listAllChatHistoryByPageForAdmin(
   })
 }
 
-/** 此处后端没有提供注释 GET /chatHistory/app/${param0} */
+/** 查询应用对话历史 分页查询某个应用的对话历史，支持游标查询 GET /chatHistory/app/${param0} */
 export async function listAppChatHistory(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.listAppChatHistoryParams,

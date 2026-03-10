@@ -1,5 +1,6 @@
 declare namespace API {
   type adminGetAppByIdParams = {
+    /** 应用ID */
     id: number
   }
 
@@ -57,6 +58,18 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseDiffResult = {
+    code?: number
+    data?: DiffResult
+    message?: string
+  }
+
+  type BaseResponseListVersionCode = {
+    code?: number
+    data?: VersionCode[]
+    message?: string
+  }
+
   type BaseResponseLoginUserVO = {
     code?: number
     data?: LoginUserVO
@@ -105,6 +118,18 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseVersionCode = {
+    code?: number
+    data?: VersionCode
+    message?: string
+  }
+
+  type BaseResponseVersionStatistics = {
+    code?: number
+    data?: VersionStatistics
+    message?: string
+  }
+
   type ChatHistory = {
     id?: number
     message?: string
@@ -130,7 +155,45 @@ declare namespace API {
   }
 
   type chatToGenCodeParams = {
+    /** 生成代码的描述 */
     message: string
+    /** 应用ID */
+    appId: number
+  }
+
+  type CodeChange = {
+    type?: 'ADD' | 'DELETE' | 'MODIFY' | 'EQUAL'
+    originalLineNum?: number
+    revisedLineNum?: number
+    originalLines?: string[]
+    revisedLines?: string[]
+    changeContext?: string
+  }
+
+  type CompareLatestRequest = {
+    appId: number
+    codeContent: string
+  }
+
+  type CompareRequest = {
+    appId: number
+    versionId1: number
+    versionId2: number
+  }
+
+  type compareVersionsParams = {
+    request: CompareRequest
+  }
+
+  type CreateVersionRequest = {
+    appId: number
+    codeContent: string
+    commitMessage: string
+    author: number
+  }
+
+  type deleteAppVersionsParams = {
+    /** 应用ID */
     appId: number
   }
 
@@ -138,21 +201,66 @@ declare namespace API {
     id?: number
   }
 
+  type DiffResult = {
+    fromVersion?: string
+    toVersion?: string
+    changes?: CodeChange[]
+    statistics?: DiffStatistics
+  }
+
+  type DiffStatistics = {
+    addedLines?: number
+    deletedLines?: number
+    modifiedLines?: number
+    totalChanges?: number
+    similarity?: number
+  }
+
+  type downloadAppCodeParams = {
+    appId: number
+  }
+
   type getAppByIdParams = {
+    /** 应用ID */
     id: number
   }
 
+  type getLatestVersionParams = {
+    /** 应用ID */
+    appId: number
+  }
+
   type getUserByIdParams = {
+    /** 用户ID */
     id: number
   }
 
   type getUserInfoVoParams = {
+    /** 用户ID */
     id: number
   }
 
-  type listAppChatHistoryParams = {
+  type getVersionDetailParams = {
+    /** 版本ID */
+    versionId: number
+  }
+
+  type getVersionListParams = {
+    /** 应用ID */
     appId: number
+  }
+
+  type getVersionStatisticsParams = {
+    /** 应用ID */
+    appId: number
+  }
+
+  type listAppChatHistoryParams = {
+    /** 应用ID */
+    appId: number
+    /** 页面大小 */
     pageSize?: number
+    /** 最后一条记录的创建时间 */
     lastCreateTime?: string
   }
 
@@ -194,9 +302,24 @@ declare namespace API {
     optimizeCountQuery?: boolean
   }
 
+  type RollbackRequest = {
+    appId: number
+    targetVersionId: number
+    commitMessage?: string
+    author: number
+  }
+
+  type searchVersionsParams = {
+    /** 应用ID */
+    appId: number
+    /** 搜索关键字 */
+    keyword?: string
+  }
+
   type ServerSentEventString = true
 
   type serveStaticResourceParams = {
+    /** 部署密钥 */
     deployKey: string
   }
 
@@ -261,5 +384,27 @@ declare namespace API {
     userProfile?: string
     userRole?: string
     createTime?: string
+  }
+
+  type VersionCode = {
+    id?: number
+    appId?: number
+    version?: string
+    commitMessage?: string
+    author?: number
+    codeContent?: string
+    parentVersionId?: number
+    fileStructure?: string
+    creatorTime?: string
+    updateTime?: string
+    isDelete?: number
+  }
+
+  type VersionStatistics = {
+    appId?: number
+    totalVersions?: number
+    firstVersion?: string
+    latestVersion?: string
+    lastUpdated?: string
   }
 }

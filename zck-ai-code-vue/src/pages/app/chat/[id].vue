@@ -44,6 +44,14 @@
         >
           {{ deploying ? '部署中...' : (deployedUrl ? '已部署' : '部署应用') }}
         </button>
+        <!-- 下载代码按钮 -->
+        <button
+          @click="downloadCode"
+          class="download-btn"
+          :disabled="downloading || !codeGenerated"
+        >
+          {{ downloading ? '下载中...' : '下载代码' }}
+        </button>
       </div>
     </div>
 
@@ -257,6 +265,7 @@ const messages = ref<{ id: number; content: string; isUser: boolean }[]>([])
 const userInput = ref('')
 const loading = ref(false)
 const deploying = ref(false)
+const downloading = ref(false)
 const deployedUrl = ref('')
 const codeGenerated = ref(false)
 const codeGenType = ref('')
@@ -543,6 +552,48 @@ const deployApp = async () => {
     message.error('部署应用失败，请稍后重试')
   } finally {
     deploying.value = false
+  }
+}
+
+// 下载代码
+const downloadCode = async () => {
+  try {
+    downloading.value = true
+
+    const response = await api.appController.downloadAppCode(
+      { appId: appId.value as any },
+      { responseType: 'blob' }
+    )
+
+    const blob = response.data
+    const contentDisposition = response.headers['content-disposition']
+    console.log('Content-Disposition:', contentDisposition)
+    let fileName = 'app-code.zip'
+
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^";]+)"?/)
+      if (match && match[1]) {
+        fileName = match[1]
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    if (fileName) {
+      link.download = fileName
+    }
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    message.success('代码下载成功')
+  } catch (error) {
+    console.error('下载代码失败', error)
+    message.error('下载失败，请稍后重试')
+  } finally {
+    downloading.value = false
   }
 }
 
@@ -853,6 +904,31 @@ onUnmounted(() => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.download-btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background-color: var(--background-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.download-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.download-btn:disabled {
+  background-color: var(--border-light);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .main-content {

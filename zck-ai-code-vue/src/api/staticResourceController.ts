@@ -2,7 +2,7 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 GET /static/${param0}/&#42;&#42; */
+/** 访问静态资源 提供静态资源访问，支持目录重定向，默认返回index.html GET /static/${param0}/&#42;&#42; */
 export async function serveStaticResource(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.serveStaticResourceParams,
