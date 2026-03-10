@@ -22,10 +22,10 @@ public interface AppService extends IService<App> {
      * 创建应用
      *
      * @param appCreateRequest 创建应用请求对象
-     * @param request          HttpServletRequest
+     * @param loginUser          user
      * @return 应用id
      */
-    long createApp(AppAddRequest appCreateRequest, HttpServletRequest request);
+    long createApp(AppAddRequest appCreateRequest, User loginUser);
 
     /**
      * 根据id修改自己的应用

@@ -19,6 +19,10 @@
           <span class="info-label">创建时间：</span>
           <span class="info-value">{{ formattedCreateTime || '未知' }}</span>
         </div>
+        <div class="info-item">
+          <span class="info-label">生成类型：</span>
+          <span class="info-value code-type-tag">{{ codeGenTypeName }}</span>
+        </div>
       </div>
       <!-- 操作栏（仅本人或管理员可见） -->
       <div v-if="isOwner" class="app-actions">
@@ -34,11 +38,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { CODE_GEN_TYPE_CONFIG } from '@/config/codeGenType'
 
 const props = defineProps<{
   visible: boolean
   appCreatorName: string
   formattedCreateTime: string
+  codeGenType: string
   isOwner: boolean
 }>()
 
@@ -53,6 +59,12 @@ const avatarColor = computed(() => {
   const name = props.appCreatorName || '未知';
   const index = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length;
   return colors[index];
+})
+
+// 计算代码生成类型名称
+const codeGenTypeName = computed(() => {
+  const config = CODE_GEN_TYPE_CONFIG[props.codeGenType as keyof typeof CODE_GEN_TYPE_CONFIG]
+  return config ? config.label : props.codeGenType || '未知'
 })
 
 // 处理关闭
@@ -180,6 +192,18 @@ const handleDelete = () => {
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   flex: 1;
+}
+
+.code-type-tag {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid #28a745;
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.2);
+  display: inline-block;
 }
 
 .app-actions {

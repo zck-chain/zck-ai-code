@@ -3,7 +3,7 @@
     <!-- 顶部栏 -->
     <div class="top-bar">
       <div class="app-info">
-        <h1 class="app-title">{{ appName }}</h1>
+        <h1 class="app-title">{{ appName }} <span v-if="codeGenType" class="app-type-tag">{{ getCodeGenTypeName(codeGenType) }}</span></h1>
       </div>
       <div class="top-actions">
         <!-- 应用详情按钮 -->
@@ -20,6 +20,7 @@
               :visible="showAppDetails"
               :appCreatorName="appCreatorName"
               :formattedCreateTime="formattedCreateTime"
+              :codeGenType="codeGenType"
               :isOwner="isOwner"
               @close="showAppDetails = false"
               @edit="editApp"
@@ -178,7 +179,7 @@ import 'highlight.js/styles/github.css'
 import AppDetailsPopup from '@/components/AppDetailsPopup.vue'
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue'
 import DeploySuccessDialog from '@/components/DeploySuccessDialog.vue'
-import { CodeGenTypeEnum } from '@/config/codeGenType'
+import { CodeGenTypeEnum, CODE_GEN_TYPE_CONFIG } from '@/config/codeGenType'
 
 // 配置marked使用highlight.js进行代码高亮
 marked.setOptions({
@@ -604,6 +605,12 @@ const visitDeployedSite = () => {
   }
 }
 
+// 获取代码生成类型名称
+const getCodeGenTypeName = (type: string) => {
+  const config = CODE_GEN_TYPE_CONFIG[type as keyof typeof CODE_GEN_TYPE_CONFIG]
+  return config ? config.label : type
+}
+
 // 关闭部署成功弹窗
 const closeDeploySuccess = () => {
   showDeploySuccess.value = false
@@ -685,6 +692,23 @@ onUnmounted(() => {
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.app-type-tag {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid #28a745;
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.2);
+  transition: all var(--transition-normal);
+  line-height: 1.4;
+  display: inline-block;
 }
 
 .top-actions {

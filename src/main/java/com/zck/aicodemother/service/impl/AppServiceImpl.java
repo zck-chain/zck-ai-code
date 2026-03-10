@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.zck.aicodemother.ai.AiCodeGenTypeRoutingService;
 import com.zck.aicodemother.constant.AppConstant;
 import com.zck.aicodemother.core.AiCodeGeneratorFacade;
 import com.zck.aicodemother.core.builder.VueProjectBuilder;
@@ -56,24 +57,26 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private VueProjectBuilder vueProjectBuilder;
     @Resource
     private ScreenshotService screenshotService;
+    @Resource
+    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
 
     @Override
-    public long createApp(AppAddRequest appCreateRequest, HttpServletRequest request) {
+    public long createApp(AppAddRequest appCreateRequest, User loginUser) {
         // 1. 参数校验
         String initPrompt = appCreateRequest.getInitPrompt();
         ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化提示 prompt 为空");
 
-        // 2. 获取当前登录用户
-        User loginUser = userService.getLoginUser(request);
 
         // 3. 创建应用
         App app = App.builder()
                 .appName(initPrompt.substring(0,Math.min(initPrompt.length(), 12)))
                 .initPrompt(initPrompt)
-                .codeGenType(CodeGenTypeEnum.HTML.getValue())
                 .userId(loginUser.getId())
                 .build();
 
+        //使用AI智能选择代码生成类型
+        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        app.setCodeGenType(selectedCodeGenType.getValue());
         // 4. 保存应用
         boolean saveResult = this.save(app);
         if (!saveResult) {

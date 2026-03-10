@@ -61,7 +61,8 @@ public class AppController {
     @Operation(summary = "创建应用", description = "用户创建新应用，须填写 initPrompt")
     public BaseResponse<Long> createApp(@RequestBody AppAddRequest addAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(addAddRequest == null, ErrorCode.PARAMS_ERROR);
-        long result = appService.createApp(addAddRequest, request);
+        User loginUser = userService.getLoginUser(request);
+        long result = appService.createApp(addAddRequest, loginUser);
         return ResultUtils.success(result);
     }
 
