@@ -178,7 +178,6 @@ const copyUrl = () => {
 }
 
 .visit-btn:hover {
-  background-color: var(--primary-dark);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }

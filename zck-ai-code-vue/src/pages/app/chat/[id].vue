@@ -115,6 +115,18 @@
           </div>
         </div>
 
+        <!-- 选中元素信息 -->
+        <div v-if="selectedElement" class="selected-element-container">
+          <a-alert
+            message="已选中元素"
+            :description="getElementInfoDescription()"
+            type="info"
+            closable
+            @close="clearSelectedElement"
+            show-icon
+          />
+        </div>
+
         <!-- 用户消息输入框 -->
         <div class="input-container">
           <div
@@ -148,6 +160,22 @@
       <div class="preview-section">
         <div class="preview-header">
           <h2>生成的网站效果</h2>
+          <div class="preview-actions">
+            <button
+              v-if="codeGenerated"
+              @click="openInNewWindow"
+              class="preview-action-btn"
+            >
+              在新窗口展示
+            </button>
+            <button
+              v-if="codeGenerated"
+              @click="toggleEditMode"
+              :class="['preview-action-btn', 'edit-mode-btn', { active: isEditMode }]"
+            >
+              {{ isEditMode ? '退出编辑模式' : '进入编辑模式' }}
+            </button>
+          </div>
         </div>
         <div class="preview-content">
           <div v-if="!codeGenerated" class="preview-placeholder">
@@ -155,10 +183,12 @@
           </div>
           <iframe
             v-else
+            ref="websiteIframe"
             :src="getWebsitePreviewUrl()"
             class="website-preview"
             title="网站预览"
             frameborder="0"
+            @load="onIframeLoad"
           ></iframe>
         </div>
       </div>
@@ -180,6 +210,15 @@ import AppDetailsPopup from '@/components/AppDetailsPopup.vue'
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue'
 import DeploySuccessDialog from '@/components/DeploySuccessDialog.vue'
 import { CodeGenTypeEnum, CODE_GEN_TYPE_CONFIG } from '@/config/codeGenType'
+import { VisualEditor, type ElementInfo } from '@/utils/visualEditor'
+import { Alert } from 'ant-design-vue'
+
+// 类型定义
+interface Message {
+  id: number
+  content: string
+  isUser: boolean
+}
 
 // 配置marked使用highlight.js进行代码高亮
 marked.setOptions({
@@ -188,29 +227,174 @@ marked.setOptions({
   gfm: true
 } as any)
 
-// 渲染Markdown内容，支持代码高亮（性能优化版）
-const renderMarkdown = (content: string) => {
+// 状态管理
+// 路由和存储
+const route = useRoute()
+const router = useRouter()
+const loginUserStore = useLoginUserStore()
+
+// 应用基本信息
+const appId = ref<string>(route.params.id as string)
+const appName = ref('')
+const codeGenType = ref('')
+const appCreatorName = ref('')
+const appCreateTime = ref('')
+const formattedCreateTime = ref('')
+const appInitPrompt = ref('')
+const isOwner = ref(false)
+
+// 消息相关
+const messages = ref<Message[]>([])
+const userInput = ref('')
+const loading = ref(false)
+const eventSource = ref<EventSource | null>(null)
+
+// 对话历史相关
+const loadingHistory = ref(false)
+const hasMoreHistory = ref(false)
+const lastCreateTime = ref<string>('')
+
+// 应用操作相关
+const deploying = ref(false)
+const downloading = ref(false)
+const deployedUrl = ref('')
+const codeGenerated = ref(false)
+
+// UI状态
+const showEditTooltip = ref(false)
+const showAppDetails = ref(false)
+const showDeleteConfirm = ref(false)
+const showDeploySuccess = ref(false)
+
+// 可视化编辑相关状态
+const isEditMode = ref(false)
+const selectedElement = ref<ElementInfo | null>(null)
+const visualEditor = ref<VisualEditor | null>(null)
+const websiteIframe = ref<HTMLIFrameElement | null>(null)
+
+// 工具函数
+// 格式化日期
+const formatDate = (dateString: string | undefined): string => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 获取创建者头像颜色
+const getCreatorAvatarColor = (): string => {
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+  ]
+  const creatorName = appCreatorName.value || '未知'
+  let hash = 0
+  for (let i = 0; i < creatorName.length; i++) {
+    hash = creatorName.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash % colors.length)
+  return colors[index] as string
+}
+
+// 获取代码生成类型名称
+const getCodeGenTypeName = (type: string): string => {
+  const config = CODE_GEN_TYPE_CONFIG[type as keyof typeof CODE_GEN_TYPE_CONFIG]
+  return config ? config.label : type
+}
+
+// 可视化编辑相关函数
+// 获取元素信息描述
+const getElementInfoDescription = (): string => {
+  if (!selectedElement.value) return ''
+  return `标签: ${selectedElement.value.tagName}\n选择器: ${selectedElement.value.selector}\n文本: ${selectedElement.value.textContent}`
+}
+
+// 切换编辑模式
+const toggleEditMode = () => {
+  if (!websiteIframe.value) return
+  
+  if (!visualEditor.value) {
+    // 初始化VisualEditor
+    visualEditor.value = new VisualEditor({
+      onElementSelected: (elementInfo) => {
+        selectedElement.value = elementInfo
+      },
+      onElementHover: (elementInfo) => {
+        // 处理鼠标悬浮事件，这里可以添加额外的逻辑
+      }
+    })
+    visualEditor.value.init(websiteIframe.value)
+  }
+  
+  // 切换编辑模式
+  const newMode = visualEditor.value.toggleEditMode()
+  isEditMode.value = newMode
+  
+  // 如果退出编辑模式，清除选中的元素
+  if (!newMode) {
+    clearSelectedElement()
+  }
+}
+
+// iframe加载完成时处理
+const onIframeLoad = () => {
+  if (visualEditor.value) {
+    visualEditor.value.onIframeLoad()
+  }
+}
+
+// 清除选中的元素
+const clearSelectedElement = () => {
+  selectedElement.value = null
+  if (visualEditor.value) {
+    visualEditor.value.clearSelection()
+  }
+}
+
+// 处理来自iframe的消息
+const handleIframeMessage = (event: MessageEvent) => {
+  if (visualEditor.value) {
+    visualEditor.value.handleIframeMessage(event)
+  }
+}
+
+// 在新窗口打开网站
+const openInNewWindow = () => {
+  const url = getWebsitePreviewUrl()
+  if (url) {
+    window.open(url, '_blank')
+  }
+}
+
+// 生成网站预览URL
+const getWebsitePreviewUrl = (): string => {
+  if (!codeGenerated.value || !codeGenType.value) return ''
+  // 移除API_CONFIG.BASE_URL中的/api部分，因为静态文件不通过/api路径访问
+  const baseUrl = API_CONFIG.BASE_URL
+  if (codeGenType.value === CodeGenTypeEnum.VUE_PROJECT) {
+    return `${baseUrl}/static/${codeGenType.value}_${appId.value}/dist/index.html`
+  }
+  return `${baseUrl}/static/${codeGenType.value}_${appId.value}/`
+}
+
+// 渲染Markdown内容，支持代码高亮
+const renderMarkdown = (content: string): string => {
   if (!content) return ''
 
-  // 快速路径：如果没有代码块，直接返回
-  if (!content.includes('```')) {
-    return marked(content)
-  }
-
-  const html = marked(content)
+  // 同步渲染Markdown
+  const html = marked.parse(content) as string
 
   // 减少DOM操作：使用正则表达式处理代码块
   let processedHtml = html
 
   // 匹配代码块：<pre><code class="language-xxx">...</code></pre>
-  processedHtml = processedHtml.replace(/<pre><code\s+class="language-(\w+)">(.*?)<\/code><\/pre>/gs, (match, language, code) => {
+  processedHtml = processedHtml.replace(/<pre><code\s+class="language-(\w+)">(.*?)<\/code><\/pre>/gs, (match: string, language: string, code: string) => {
     // 解码HTML实体
     const decodedCode = code
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
       .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replace(/&#39;/g, "'")
 
     let highlightedCode = ''
     if (language && hljs.getLanguage(language)) {
@@ -233,14 +417,14 @@ const renderMarkdown = (content: string) => {
   })
 
   // 处理没有指定语言的代码块
-  processedHtml = processedHtml.replace(/<pre><code>(.*?)<\/code><\/pre>/gs, (match, code) => {
+  processedHtml = processedHtml.replace(/<pre><code>(.*?)<\/code><\/pre>/gs, (match: string, code: string) => {
     // 解码HTML实体
     const decodedCode = code
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
       .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replace(/&#39;/g, "'")
 
     let highlightedCode = ''
     try {
@@ -256,42 +440,12 @@ const renderMarkdown = (content: string) => {
   return processedHtml
 }
 
-// 状态管理
-const route = useRoute()
-const router = useRouter()
-const loginUserStore = useLoginUserStore()
-const appId = ref<string>(route.params.id as string)
-const appName = ref('')
-const messages = ref<{ id: number; content: string; isUser: boolean }[]>([])
-const userInput = ref('')
-const loading = ref(false)
-const deploying = ref(false)
-const downloading = ref(false)
-const deployedUrl = ref('')
-const codeGenerated = ref(false)
-const codeGenType = ref('')
-const eventSource = ref<EventSource | null>(null)
-const isOwner = ref(false)
-const showEditTooltip = ref(false)
-// 应用详情相关状态
-const showAppDetails = ref(false)
-const showDeleteConfirm = ref(false)
-const showDeploySuccess = ref(false)
-const appCreatorName = ref('')
-const appCreateTime = ref('')
-const formattedCreateTime = ref('')
-// 对话历史相关状态
-const loadingHistory = ref(false)
-const hasMoreHistory = ref(false)
-const lastCreateTime = ref<string>('')
-const appInitPrompt = ref('')
-
+// 应用信息管理
 // 加载应用信息
 const loadAppInfo = async (loadHistory: boolean) => {
-  console.log("loadAppInfo函数被调用，loadHistory:", loadHistory, "appId:", appId.value)
   try {
     const response = await api.appController.getAppById({
-      id: appId.value // 直接使用字符串ID，避免类型转换
+      id: appId.value as any // 保持string类型，避免精度丢失
     })
 
     if (response.data.code === 0 && response.data.data) {
@@ -312,10 +466,9 @@ const loadAppInfo = async (loadHistory: boolean) => {
 
       // 加载对话历史
       if (loadHistory) {
-        await loadChatHistory();
-        //展示最新的页面
-        codeGenerated.value = true;
-        await getWebsitePreviewUrl();
+        await loadChatHistory()
+        // 展示最新的页面
+        codeGenerated.value = true
       } else {
         await sendMessageToAI(appInitPrompt.value)
       }
@@ -332,7 +485,6 @@ const loadAppInfo = async (loadHistory: boolean) => {
 // 加载对话历史
 const loadChatHistory = async (loadMore = false) => {
   try {
-    console.log('进入loadChatHistory函数，loadMore:', loadMore, 'appId:', appId.value)
     loadingHistory.value = true
     const response = await api.chatHistoryController.listAppChatHistory({
       appId: appId.value as any,
@@ -342,7 +494,6 @@ const loadChatHistory = async (loadMore = false) => {
 
     if (response.data.code === 0 && response.data.data) {
       const chatHistory = response.data.data.records || []
-      console.log('获取到对话历史记录数量:', chatHistory.length)
 
       // 转换对话历史为前端消息格式
       const newMessages = chatHistory.map((item: any) => ({
@@ -363,8 +514,11 @@ const loadChatHistory = async (loadMore = false) => {
       }
 
       // 更新最后一条消息的创建时间，用于下一页加载
-      if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1]) {
-        lastCreateTime.value = chatHistory[chatHistory.length - 1].createTime || ''
+      if (chatHistory.length > 0) {
+        const lastItem = chatHistory[chatHistory.length - 1]
+        if (lastItem) {
+          lastCreateTime.value = lastItem.createTime || ''
+        }
         hasMoreHistory.value = chatHistory.length === 10
       } else {
         hasMoreHistory.value = false
@@ -387,71 +541,14 @@ const loadMoreHistory = async () => {
   await loadChatHistory(true)
 }
 
-// 切换应用详情弹窗
-const toggleAppDetails = () => {
-  showAppDetails.value = !showAppDetails.value
+// 消息处理
+// 清理SSE连接
+const cleanupEventSource = () => {
+  if (eventSource.value) {
+    eventSource.value.close()
+    eventSource.value = null
+  }
 }
-
-// 获取创建者头像颜色
-const getCreatorAvatarColor = () => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-  ];
-  const creatorName = appCreatorName.value || '未知';
-  let hash = 0;
-  for (let i = 0; i < creatorName.length; i++) {
-    hash = creatorName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash % colors.length);
-  return colors[index];
-};
-
-// 格式化日期
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-};
-
-// 编辑应用
-const editApp = () => {
-  router.push(`/app/edit/${appId.value}`);
-  showAppDetails.value = false;
-};
-
-// 删除应用
-const deleteApp = () => {
-  showDeleteConfirm.value = true;
-  showAppDetails.value = false;
-};
-
-// 确认删除
-const confirmDelete = async () => {
-  try {
-    // 调用删除应用的API
-    const response = await api.appController.deleteApp({
-      id: appId.value as any
-    });
-
-    if (response.data.code === 0 && response.data.data) {
-      message.success('应用删除成功');
-      router.push('/');
-    } else {
-      message.error('删除失败：' + response.data.message);
-    }
-  } catch (error) {
-    console.error('删除应用失败', error);
-    message.error('删除失败，请稍后重试');
-  } finally {
-    showDeleteConfirm.value = false;
-  }
-};
-
-// 取消删除
-const cancelDelete = () => {
-  showDeleteConfirm.value = false;
-};
 
 // 发送消息给AI
 const sendMessageToAI = async (userMessage: string) => {
@@ -508,7 +605,7 @@ const sendMessageToAI = async (userMessage: string) => {
     // 处理done事件
     eventSource.value.addEventListener('done', () => {
       // 流式传输结束
-      eventSource.value?.close()
+      cleanupEventSource()
       loading.value = false
       codeGenerated.value = true
     })
@@ -516,7 +613,7 @@ const sendMessageToAI = async (userMessage: string) => {
     // 处理SSE错误
     eventSource.value.onerror = (error) => {
       console.error('SSE连接错误', error)
-      eventSource.value?.close()
+      cleanupEventSource()
       loading.value = false
       message.error('与服务器连接失败，请稍后重试')
     }
@@ -530,8 +627,63 @@ const sendMessageToAI = async (userMessage: string) => {
 // 发送用户消息
 const sendMessage = () => {
   if (!userInput.value.trim()) return
-  codeGenerated.value=false;
-  sendMessageToAI(userInput.value)
+  
+  let message = userInput.value
+  
+  // 如果有选中的元素，将元素信息添加到提示词中
+  if (selectedElement.value) {
+    message += `\n\n[选中元素信息]\n标签: ${selectedElement.value.tagName}\n选择器: ${selectedElement.value.selector}\n文本: ${selectedElement.value.textContent}`
+  }
+  
+  codeGenerated.value = false
+  sendMessageToAI(message)
+  
+  // 发送消息后，清除选中元素并退出编辑模式
+  clearSelectedElement()
+  if (isEditMode.value && visualEditor.value) {
+    visualEditor.value.disableEditMode()
+    isEditMode.value = false
+  }
+}
+
+// 应用操作
+// 编辑应用
+const editApp = () => {
+  router.push(`/app/edit/${appId.value}`)
+  showAppDetails.value = false
+}
+
+// 删除应用
+const deleteApp = () => {
+  showDeleteConfirm.value = true
+  showAppDetails.value = false
+}
+
+// 确认删除
+const confirmDelete = async () => {
+  try {
+    // 调用删除应用的API
+    const response = await api.appController.deleteApp({
+      id: appId.value as any
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      message.success('应用删除成功')
+      router.push('/')
+    } else {
+      message.error('删除失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('删除应用失败', error)
+    message.error('删除失败，请稍后重试')
+  } finally {
+    showDeleteConfirm.value = false
+  }
+}
+
+// 取消删除
+const cancelDelete = () => {
+  showDeleteConfirm.value = false
 }
 
 // 部署应用
@@ -568,7 +720,6 @@ const downloadCode = async () => {
 
     const blob = response.data
     const contentDisposition = response.headers['content-disposition']
-    console.log('Content-Disposition:', contentDisposition)
     let fileName = 'app-code.zip'
 
     if (contentDisposition) {
@@ -605,35 +756,17 @@ const visitDeployedSite = () => {
   }
 }
 
-// 获取代码生成类型名称
-const getCodeGenTypeName = (type: string) => {
-  const config = CODE_GEN_TYPE_CONFIG[type as keyof typeof CODE_GEN_TYPE_CONFIG]
-  return config ? config.label : type
-}
-
 // 关闭部署成功弹窗
 const closeDeploySuccess = () => {
   showDeploySuccess.value = false
 }
 
-// 生成网站预览URL
-const getWebsitePreviewUrl = () => {
-
-  if (!codeGenerated.value || !codeGenType.value) return ''
-  if (codeGenType.value===CodeGenTypeEnum.VUE_PROJECT) {
-    return `${API_CONFIG.BASE_URL}/static/${codeGenType.value}_${appId.value}/dist/index.html`
-  }
-  return `${API_CONFIG.BASE_URL}/static/${codeGenType.value}_${appId.value}/`
+// 切换应用详情弹窗
+const toggleAppDetails = () => {
+  showAppDetails.value = !showAppDetails.value
 }
 
-// 清理SSE连接
-const cleanupEventSource = () => {
-  if (eventSource.value) {
-    eventSource.value.close()
-    eventSource.value = null
-  }
-}
-
+// 生命周期
 // 页面加载时初始化
 onMounted(async () => {
   const idParam = route.params.id as string
@@ -647,6 +780,10 @@ onMounted(async () => {
     router.push(`/user/login?redirect=${redirectPath}`)
     return
   }
+  
+  // 添加消息事件监听器
+  window.addEventListener('message', handleIframeMessage)
+  
   // 加载应用信息和历史记录
   try {
     await loadAppInfo(isNewApp)
@@ -660,6 +797,12 @@ onMounted(async () => {
 // 页面卸载时清理
 onUnmounted(() => {
   cleanupEventSource()
+  // 移除消息事件监听器
+  window.removeEventListener('message', handleIframeMessage)
+  // 确保编辑模式被关闭
+  if (visualEditor.value) {
+    visualEditor.value.disableEditMode()
+  }
 })
 </script>
 
@@ -1229,6 +1372,9 @@ onUnmounted(() => {
   padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
   background-color: var(--background-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .preview-header h2 {
@@ -1236,6 +1382,41 @@ onUnmounted(() => {
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   margin: 0;
+}
+
+.preview-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.preview-action-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--background-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.preview-action-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.edit-mode-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.selected-element-container {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--background-default);
 }
 
 .preview-content {
