@@ -72,7 +72,7 @@
       <!-- 左侧对话区域 -->
       <div class="chat-section">
         <!-- 消息区域 -->
-        <div class="messages-container">
+        <div ref="messagesContainer" class="messages-container">
           <!-- 加载更多按钮 -->
           <div v-if="hasMoreHistory" class="load-more-container">
             <button
@@ -197,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import api from '@/api'
@@ -271,6 +271,7 @@ const isEditMode = ref(false)
 const selectedElement = ref<ElementInfo | null>(null)
 const visualEditor = ref<VisualEditor | null>(null)
 const websiteIframe = ref<HTMLIFrameElement | null>(null)
+const messagesContainer = ref<HTMLElement | null>(null)
 
 // 工具函数
 // 格式化日期
@@ -348,6 +349,16 @@ const clearSelectedElement = () => {
   if (visualEditor.value) {
     visualEditor.value.clearSelection()
   }
+}
+
+// 自动滚动到最新消息
+const scrollToBottom = () => {
+  // 使用nextTick确保DOM已更新
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }
+  })
 }
 
 // 处理来自iframe的消息
@@ -521,8 +532,11 @@ const loadChatHistory = async (loadMore = false) => {
         }
         hasMoreHistory.value = chatHistory.length === 10
       } else {
-        hasMoreHistory.value = false
-      }
+      hasMoreHistory.value = false
+    }
+    
+    // 自动滚动到最新消息
+    scrollToBottom()
     } else {
       console.error('加载对话历史失败：' + response.data.message)
       message.error('加载对话历史失败：' + response.data.message)
@@ -595,6 +609,8 @@ const sendMessageToAI = async (userMessage: string) => {
           const aiMessageIndex = messages.value.findIndex(msg => msg.id === aiMessageId)
           if (aiMessageIndex !== -1 && messages.value[aiMessageIndex]) {
             messages.value[aiMessageIndex].content = aiResponse
+            // 自动滚动到最新消息
+            scrollToBottom()
           }
         }
       } catch (error) {
@@ -644,6 +660,9 @@ const sendMessage = () => {
     visualEditor.value.disableEditMode()
     isEditMode.value = false
   }
+  
+  // 自动滚动到最新消息
+  scrollToBottom()
 }
 
 // 应用操作
@@ -770,7 +789,6 @@ const toggleAppDetails = () => {
 // 页面加载时初始化
 onMounted(async () => {
   const idParam = route.params.id as string
-  const isNewApp = route.query.view === '1'
   // 确保appId使用字符串类型，避免精度丢失
   appId.value = idParam
 
@@ -786,7 +804,7 @@ onMounted(async () => {
   
   // 加载应用信息和历史记录
   try {
-    await loadAppInfo(isNewApp)
+    await loadAppInfo(true)
   } catch (error) {
     console.error('加载应用信息失败', error)
     message.error('加载应用信息失败，请稍后重试')

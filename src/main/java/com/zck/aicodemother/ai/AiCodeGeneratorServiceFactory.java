@@ -3,6 +3,7 @@ package com.zck.aicodemother.ai;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.zck.aicodemother.ai.tool.FileWriteTool;
+import com.zck.aicodemother.ai.tool.ToolManager;
 import com.zck.aicodemother.exception.BusinessException;
 import com.zck.aicodemother.exception.ErrorCode;
 import com.zck.aicodemother.model.enums.CodeGenTypeEnum;
@@ -37,6 +38,8 @@ public class AiCodeGeneratorServiceFactory {
     private RedisChatMemoryStore redisChatMemoryStore;
     @Resource
     private ChatHistoryService chatHistoryService;
+    @Resource
+    private ToolManager toolManager;
     /**
      * AI服务实例缓存
      * 缓存策略:
@@ -110,7 +113,7 @@ public class AiCodeGeneratorServiceFactory {
             case VUE_PROJECT->AiServices.builder(AiCodeGeneratorService.class)
                     .streamingChatModel(reasoningStreamingChatModel)
                     .chatMemoryProvider(memoryId-> chatMemory)
-                    .tools(new FileWriteTool())
+                    .tools(toolManager.getAllTools())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest,"Error: there is no tool called"+toolExecutionRequest.name()
                     ))
