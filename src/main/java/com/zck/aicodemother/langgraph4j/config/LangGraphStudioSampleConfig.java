@@ -1,0 +1,25 @@
+package com.zck.aicodemother.langgraph4j.config;
+
+import com.zck.aicodemother.langgraph4j.CodeGenWorkflow;
+import org.bsc.langgraph4j.GraphStateException;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class LangGraphStudioSampleConfig extends AbstractLangGraphStudioConfig {
+
+    final LangGraphFlow flow;
+
+    public LangGraphStudioSampleConfig() throws GraphStateException {
+        var workflow = new CodeGenWorkflow().createWorkflow().stateGraph;
+        // define your workflow   
+        this.flow = LangGraphFlow.builder()
+                .title("LangGraph Studio")
+                .stateGraph(workflow)
+                .build();
+    }
+
+    @Override
+    public LangGraphFlow getFlow() {
+        return this.flow;
+    }
+}
