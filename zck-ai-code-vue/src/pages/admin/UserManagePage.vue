@@ -34,7 +34,7 @@
             v-model="searchForm.userRole"
             class="search-input"
           >
-            <option value="">全部</option>
+            <option value="all">全部</option>
             <option value="user">普通用户</option>
             <option value="admin">管理员</option>
           </select>
@@ -213,7 +213,7 @@ const searchForm = reactive<API.UserQueryRequest>({
   pageSize: 10,
   userName: '',
   userAccount: '',
-  userRole: '',
+  userRole: 'all',
 })
 
 // 表格数据

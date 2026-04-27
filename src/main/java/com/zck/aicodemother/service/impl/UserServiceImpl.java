@@ -172,18 +172,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }
+        String userRole = userQueryRequest.getUserRole();
         String userAccount = userQueryRequest.getUserAccount();
         String userName = userQueryRequest.getUserName();
         String userProfile = userQueryRequest.getUserProfile();
-        String userRole = userQueryRequest.getUserRole();
+
         String sortField = userQueryRequest.getSortField();
         String sortOrder = userQueryRequest.getSortOrder();
-        return QueryWrapper.create()
-                .eq("userRole", userRole)
-                .like("userAccount", userAccount)
-                .like("userName", userName)
-                .like("userProfile", userProfile)
-                .orderBy(sortField, "ascend".equals(sortOrder));
+        if (userRole.equals("all")) {
+            return QueryWrapper.create()
+                    .like("userAccount", userAccount)
+                    .like("userName", userName)
+                    .like("userProfile", userProfile)
+                    .orderBy(sortField, "ascend".equals(sortOrder));
+        }else{
+            return QueryWrapper.create()
+                    .eq("userRole", userRole)
+                    .like("userAccount", userAccount)
+                    .like("userName", userName)
+                    .like("userProfile", userProfile)
+                    .orderBy(sortField, "ascend".equals(sortOrder));
+        }
     }
 
 

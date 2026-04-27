@@ -154,6 +154,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { message, Modal } from 'ant-design-vue'
 import api from '@/api'
 
 // 状态管理
@@ -184,11 +185,11 @@ const loadApps = async () => {
       apps.value = response.data.data.records || []
       total.value = response.data.data.totalRow || 0
     } else {
-      alert('加载应用列表失败：' + response.data.message)
+      message.error('加载应用列表失败：' + response.data.message)
     }
   } catch (error) {
     console.error('加载应用列表失败', error)
-    alert('加载应用列表失败，请稍后重试')
+    message.error('加载应用列表失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -201,25 +202,31 @@ const editApp = (appId: string) => {
 }
 
 // 删除应用
-const deleteApp = async (appId: string) => {
-  if (!confirm('确定要删除这个应用吗？')) return
+const deleteApp = (appId: string) => {
+  Modal.confirm({
+    title: '确认删除',
+    content: '确定要删除这个应用吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const response = await api.appController.adminDeleteApp({
+          id: appId
+        })
 
-  try {
-    const response = await api.appController.adminDeleteApp({
-      id: appId
-    })
-
-    if (response.data.code === 0 && response.data.data) {
-      alert('删除成功')
-      // 重新加载列表
-      loadApps()
-    } else {
-      alert('删除失败：' + response.data.message)
+        if (response.data.code === 0 && response.data.data) {
+          message.success('删除成功')
+          // 重新加载列表
+          loadApps()
+        } else {
+          message.error('删除失败：' + response.data.message)
+        }
+      } catch (error) {
+        console.error('删除应用失败', error)
+        message.error('删除应用失败，请稍后重试')
+      }
     }
-  } catch (error) {
-    console.error('删除应用失败', error)
-    alert('删除应用失败，请稍后重试')
-  }
+  })
 }
 
 // 精选应用（设置优先级为99）
@@ -231,15 +238,15 @@ const featureApp = async (appId: string) => {
     })
 
     if (response.data.code === 0 && response.data.data) {
-      alert('设置精选成功')
+      message.success('设置精选成功')
       // 重新加载列表
       loadApps()
     } else {
-      alert('设置精选失败：' + response.data.message)
+      message.error('设置精选失败：' + response.data.message)
     }
   } catch (error) {
     console.error('设置精选失败', error)
-    alert('设置精选失败，请稍后重试')
+    message.error('设置精选失败，请稍后重试')
   }
 }
 

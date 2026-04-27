@@ -454,6 +454,7 @@ const renderMarkdown = (content: string): string => {
 // 应用信息管理
 // 加载应用信息
 const loadAppInfo = async (loadHistory: boolean) => {
+  console.log("测试")
   try {
     const response = await api.appController.getAppById({
       id: appId.value as any // 保持string类型，避免精度丢失
@@ -789,6 +790,7 @@ const toggleAppDetails = () => {
 // 页面加载时初始化
 onMounted(async () => {
   const idParam = route.params.id as string
+  const isNewApp = route.query.view === '1'
   // 确保appId使用字符串类型，避免精度丢失
   appId.value = idParam
 
@@ -804,7 +806,7 @@ onMounted(async () => {
   
   // 加载应用信息和历史记录
   try {
-    await loadAppInfo(true)
+    await loadAppInfo(isNewApp)
   } catch (error) {
     console.error('加载应用信息失败', error)
     message.error('加载应用信息失败，请稍后重试')

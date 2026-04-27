@@ -7,6 +7,7 @@ import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.zck.aicodemother.ai.AiCodeGenTypeRoutingService;
+import com.zck.aicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.zck.aicodemother.constant.AppConstant;
 import com.zck.aicodemother.core.AiCodeGeneratorFacade;
 import com.zck.aicodemother.core.builder.VueProjectBuilder;
@@ -58,7 +59,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private ScreenshotService screenshotService;
     @Resource
-    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+    private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
     @Override
     public long createApp(AppAddRequest appCreateRequest, User loginUser) {
@@ -75,7 +76,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 .build();
 
         //使用AI智能选择代码生成类型
-        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
+        CodeGenTypeEnum selectedCodeGenType = routingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());
         // 4. 保存应用
         boolean saveResult = this.save(app);

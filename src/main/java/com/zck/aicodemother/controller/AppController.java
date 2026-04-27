@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
@@ -109,6 +110,11 @@ public class AppController {
     // 【用户】分页查询精选的应用列表（支持根据名称查询，每页最多 20 个）
     @PostMapping("/list/featured/page")
     @Operation(summary = "查询精选应用列表", description = "分页查询精选的应用列表，支持根据名称查询，每页最多20个")
+    @Cacheable(
+            value="good_app_page",
+            key="T(com.zck.aicodemother.utils.CacheKeyUtils).generateKey(#appQueryRequest)",
+            condition = "#appQueryRequest.pageNum<=8"
+    )
     public BaseResponse<Page<App>> listFeaturedAppByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtils.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Page<App> appPage = appService.listFeaturedAppByPage(appQueryRequest);

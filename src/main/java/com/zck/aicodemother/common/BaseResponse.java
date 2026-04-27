@@ -4,6 +4,7 @@ package com.zck.aicodemother.common;
 
 import com.zck.aicodemother.exception.ErrorCode;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -12,6 +13,7 @@ import java.io.Serializable;
  * @param <T> 泛型，表示返回数据的类型
  */
 @Data
+@NoArgsConstructor
 public class BaseResponse<T> implements Serializable {
 
     /**
