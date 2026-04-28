@@ -19,6 +19,8 @@ import com.zck.aicodemother.model.dto.app.AppQueryRequest;
 import com.zck.aicodemother.model.dto.app.AppUpdateRequest;
 import com.zck.aicodemother.model.entity.App;
 import com.zck.aicodemother.model.entity.User;
+import com.zck.aicodemother.ratelimiter.annotation.RateLimit;
+import com.zck.aicodemother.ratelimiter.config.RateLimitType;
 import com.zck.aicodemother.service.AppService;
 import com.zck.aicodemother.service.ProjectDownloadService;
 import com.zck.aicodemother.service.UserService;
@@ -37,6 +39,7 @@ import reactor.core.publisher.Mono;
 
 import java.awt.*;
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -162,6 +165,7 @@ public class AppController {
     }
 
     @GetMapping(value="/chat/gen/code",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @RateLimit(limitType= RateLimitType.USER,rate = 5,rateInterval = 60,message = "AI对话请求过于繁忙，请稍后在试")
     @Operation(summary = "生成代码", description = "通过对话方式生成代码，流式返回结果")
     public Flux<ServerSentEvent<String>> chatToGenCode(@Parameter(description = "生成代码的描述", required = true) @RequestParam String message,  @Parameter(description = "应用ID", required = true) @RequestParam Long appId, HttpServletRequest request) {
         //参数校验
@@ -246,6 +250,48 @@ public class AppController {
         // 7. 调用通用下载服务
         projectDownloadService.downloadProjectAsZip(sourceDirPath, downloadFileName, response);
     }
+
+
+    /**
+     * 应用构建状态
+     * @param appId
+     * @param request
+     * @return
+     */
+    @GetMapping("/build/status/{appId}")
+    public BaseResponse<Map<String, Object>> getBuildStatus(@PathVariable Long appId, HttpServletRequest request) {
+        // 参数校验和权限检查
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
+        User loginUser = userService.getLoginUser(request);
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+
+        if (!app.getUserId().equals(loginUser.getId()) && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限查询构建状态");
+        }
+        // 检查构建状态
+        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + "vue_project_" + appId;
+        File projectDir = new File(projectPath);
+        File distDir = new File(projectDir, "dist");
+        Map<String, Object> buildStatus = new HashMap<>();
+        buildStatus.put("appId", appId);
+        buildStatus.put("projectExists", projectDir.exists());
+        buildStatus.put("distExists", distDir.exists());
+        buildStatus.put("isBuilding", false); // 同步构建模式下总是false
+        if (distDir.exists()) {
+            buildStatus.put("status", "completed");
+            buildStatus.put("message", "构建已完成");
+            buildStatus.put("buildTime", distDir.lastModified());
+        } else if (projectDir.exists()) {
+            buildStatus.put("status", "pending");
+            buildStatus.put("message", "项目已生成，等待构建");
+        } else {
+            buildStatus.put("status", "not_found");
+            buildStatus.put("message", "项目不存在");
+        }
+        return ResultUtils.success(buildStatus);
+    }
+
 
 
 

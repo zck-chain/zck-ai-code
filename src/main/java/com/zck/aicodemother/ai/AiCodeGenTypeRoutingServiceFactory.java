@@ -1,5 +1,6 @@
 package com.zck.aicodemother.ai;
 
+import com.zck.aicodemother.ai.guardail.PromptSafetyInputGuardrail;
 import com.zck.aicodemother.utils.SpringContextUtil;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
@@ -25,6 +26,7 @@ public class AiCodeGenTypeRoutingServiceFactory {
         ChatModel chatModel = SpringContextUtil.getBean("routingChatModelPrototype", ChatModel.class);
         return AiServices.builder(AiCodeGenTypeRoutingService.class)
                 .chatModel(chatModel)
+                .inputGuardrails(new PromptSafetyInputGuardrail())//添加输入护轨
                 .build();
     }
 

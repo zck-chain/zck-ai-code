@@ -627,6 +627,32 @@ const sendMessageToAI = async (userMessage: string) => {
       codeGenerated.value = true
     })
 
+    // 处理business-error事件（后端限流等错误）
+    eventSource.value.addEventListener('business-error', (event: MessageEvent) => {
+      try {
+        const errorData = JSON.parse(event.data)
+        console.error('SSE业务错误事件:', errorData)
+
+        // 显示具体的错误信息
+        const errorMessage = errorData.message || '生成过程中出现错误'
+        const aiMessageIndex = messages.value.findIndex(msg => msg.id === aiMessageId)
+        if (aiMessageIndex !== -1 && messages.value[aiMessageIndex]) {
+          messages.value[aiMessageIndex].content = `❌ ${errorMessage}`
+        }
+
+        message.error(errorMessage)
+
+        cleanupEventSource()
+        loading.value = false
+        codeGenerated.value = true
+      } catch (parseError) {
+        console.error('解析错误事件失败:', parseError, '原始数据:', event.data)
+        message.error('服务器返回错误')
+        cleanupEventSource()
+        loading.value = false
+      }
+    })
+
     // 处理SSE错误
     eventSource.value.onerror = (error) => {
       console.error('SSE连接错误', error)

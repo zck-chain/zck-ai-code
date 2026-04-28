@@ -26,6 +26,7 @@ public class RoutingAiModelConfig {
     private Boolean logRequests = false;
 
     private Boolean logResponses = false;
+    private Integer maxRetries=3;
 
     /**
      * 创建用于路由判断的ChatModel
@@ -41,6 +42,7 @@ public class RoutingAiModelConfig {
                 .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
+                .maxRetries(maxRetries)
                 .build();
     }
 }
