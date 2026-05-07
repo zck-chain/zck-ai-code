@@ -31,6 +31,7 @@ import com.zck.aicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -46,6 +47,8 @@ import java.time.LocalDateTime;
 @Service
 @Slf4j
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
+    @Value("${code.deploy-host:http://localhost}")
+    private String deployHost;
     @Resource
     private UserService userService;
     @Resource
@@ -435,7 +438,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult,ErrorCode.OPERATION_ERROR,"更新应用部署信息失败");
         //9.返回可访问的url路径
-        String appDeployUrl = String.format("%s/%s", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s", deployHost, deployKey);
         //10.异步生成截图更新应用封面
         generateAppScreenshotAsync(appId,appDeployUrl);
         return appDeployUrl;

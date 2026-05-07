@@ -36,5 +36,6 @@ build/
 application-local.yml
 tmp
 **/src/test
+application-prod.yml
 
 
