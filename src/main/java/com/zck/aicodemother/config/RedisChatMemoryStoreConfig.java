@@ -1,6 +1,7 @@
 package com.zck.aicodemother.config;
 
-import cn.hutool.core.util.StrUtil;
+
+import com.github.xiaoymin.knife4j.core.util.StrUtil;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
