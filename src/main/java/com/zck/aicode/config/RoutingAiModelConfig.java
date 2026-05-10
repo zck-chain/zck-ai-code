@@ -1,12 +1,16 @@
 package com.zck.aicode.config;
 
+import com.zck.aicode.moitor.AiModelMonitorListener;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+
+import java.util.List;
 
 @Configuration
 @ConfigurationProperties(prefix = "langchain4j.open-ai.routing-chat-model")
@@ -27,6 +31,7 @@ public class RoutingAiModelConfig {
 
     private Boolean logResponses = false;
     private Integer maxRetries=3;
+
 
     /**
      * 创建用于路由判断的ChatModel

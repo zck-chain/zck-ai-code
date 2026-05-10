@@ -24,6 +24,8 @@ import com.zck.aicode.mapper.AppMapper;
 import com.zck.aicode.model.entity.User;
 import com.zck.aicode.model.enums.ChatHistoryMessageTypeEnum;
 import com.zck.aicode.model.enums.CodeGenTypeEnum;
+import com.zck.aicode.moitor.MonitorContext;
+import com.zck.aicode.moitor.MonitorContextHolder;
 import com.zck.aicode.service.AppService;
 import com.zck.aicode.service.ChatHistoryService;
 import com.zck.aicode.service.ScreenshotService;
@@ -33,6 +35,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
@@ -65,29 +68,29 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public long createApp(AppAddRequest appCreateRequest, User loginUser) {
         // 1. 参数校验
         String initPrompt = appCreateRequest.getInitPrompt();
         ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化提示 prompt 为空");
 
-
-        // 3. 创建应用
+        // 2. 创建应用
         App app = App.builder()
                 .appName(initPrompt.substring(0,Math.min(initPrompt.length(), 12)))
                 .initPrompt(initPrompt)
                 .userId(loginUser.getId())
                 .build();
 
-        //使用AI智能选择代码生成类型
+        //3.使用AI智能选择代码生成类型
         AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
         CodeGenTypeEnum selectedCodeGenType = routingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());
-        // 4. 保存应用
+        //4.保存应用
         boolean saveResult = this.save(app);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建应用失败");
         }
-        // 5. 返回应用id
+        //6. 返回应用id
         return app.getId();
     }
 
@@ -377,10 +380,21 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
         //5.通过校验后，添加用户消息到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(),loginUser.getId());
-        //6.调用ai生成代码
+        //6.设置监控上下文
+        MonitorContextHolder.setContext(
+                MonitorContext.builder()
+                        .appId(appId.toString())
+                        .userId(loginUser.getId().toString())
+                        .build()
+        );
+        //7.调用ai生成代码
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
-        //7.收集AI响应内容并在完成后记录到对话历史记录
-        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService ,appId, loginUser,codeGenTypeEnum);
+        //8.收集AI响应内容并在完成后记录到对话历史记录
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService ,appId, loginUser,codeGenTypeEnum)
+                .doFinally(signalType -> {
+                    //9.清除监控上下文
+                    MonitorContextHolder.clearContext();
+                });
     }
 
     @Override
