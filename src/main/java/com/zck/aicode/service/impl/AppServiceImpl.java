@@ -6,8 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import com.zck.aicode.ai.AiCodeGenTypeRoutingService;
-import com.zck.aicode.ai.AiCodeGenTypeRoutingServiceFactory;
+import com.zck.aicode.ai.*;
 import com.zck.aicode.constant.AppConstant;
 import com.zck.aicode.core.AiCodeGeneratorFacade;
 import com.zck.aicode.core.builder.VueProjectBuilder;
@@ -66,6 +65,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private ScreenshotService screenshotService;
     @Resource
     private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
+    @Resource
+    private AiCodeGenMessageServiceFactory aiCodeGenMessageServiceFactory;
+    @Resource
+    private AiCodeGenPromptServiceFactory aiCodeGenPromptServiceFactory;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -76,7 +79,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
         // 2. 创建应用
         App app = App.builder()
-                .appName(initPrompt.substring(0,Math.min(initPrompt.length(), 12)))
                 .initPrompt(initPrompt)
                 .userId(loginUser.getId())
                 .build();
@@ -85,7 +87,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
         CodeGenTypeEnum selectedCodeGenType = routingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());
-        //4.保存应用
+
+        //4.使用ai生成应用标题
+        AiCodeGenMessageService aiCodeGenMessageService = aiCodeGenMessageServiceFactory.createAiCodeGenMessageService();
+        String title = aiCodeGenMessageService.optimiseMessage(initPrompt);
+        app.setAppName(title);
+        //5.保存应用
         boolean saveResult = this.save(app);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建应用失败");
@@ -477,6 +484,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             boolean updated = this.updateById(updateApp);
             ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
         });
+    }
+
+    @Override
+    public String getAiCodeGenPrompt(String prompt) {
+        //1.参数校验
+        ThrowUtils.throwIf(StrUtil.isBlank(prompt) , ErrorCode.PARAMS_ERROR,"应用提示词不能为空");
+        AiCodeGenPromptService aiCodeGenPromptService = aiCodeGenPromptServiceFactory.createAiCodeGenPromptService();
+        return aiCodeGenPromptService.getAiCodeGenPrompt(prompt);
     }
 
 

@@ -291,7 +291,15 @@ public class AppController {
         return ResultUtils.success(buildStatus);
     }
 
-
+    @PostMapping("/oiptimise")
+    @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
+    @Operation(summary = "优化提示词", description = "用户创建新应用，须填写 initPrompt")
+    public BaseResponse getAiCodeGenPrompt(String prompt) {
+        // 参数校验和权限检查
+        ThrowUtils.throwIf(prompt == null, ErrorCode.PARAMS_ERROR);
+        String result = appService.getAiCodeGenPrompt(prompt);
+        return ResultUtils.success(result);
+    }
 
 
 }

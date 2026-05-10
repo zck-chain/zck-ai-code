@@ -56,6 +56,20 @@ export async function adminUpdateApp(body: API.AppUpdateRequest, options?: { [ke
   })
 }
 
+/** 此处后端没有提供注释 GET /app/build/status/${param0} */
+export async function getBuildStatus(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getBuildStatusParams,
+  options?: { [key: string]: any }
+) {
+  const { appId: param0, ...queryParams } = params
+  return request<API.BaseResponseMapStringObject>(`/app/build/status/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
+
 /** 生成代码 通过对话方式生成代码，流式返回结果 GET /app/chat/gen/code */
 export async function chatToGenCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -107,7 +121,7 @@ export async function deployApp(body: API.AppDeployRequest, options?: { [key: st
   })
 }
 
-/** 此处后端没有提供注释 GET /app/download/${param0} */
+/** 下载代码 下载代码并返回代码压缩包.zip GET /app/download/${param0} */
 export async function downloadAppCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.downloadAppCodeParams,
@@ -159,6 +173,21 @@ export async function listMyAppByPage(body: API.AppQueryRequest, options?: { [ke
       'Content-Type': 'application/json',
     },
     data: body,
+    ...(options || {}),
+  })
+}
+
+/** 优化提示词 用户创建新应用，须填写 initPrompt POST /app/oiptimise */
+export async function getAiCodeGenPrompt(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getAiCodeGenPromptParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponse>('/app/oiptimise', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
     ...(options || {}),
   })
 }

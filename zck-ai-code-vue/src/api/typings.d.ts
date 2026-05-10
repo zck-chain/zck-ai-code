@@ -46,6 +46,12 @@ declare namespace API {
     priority?: number
   }
 
+  type BaseResponse = {
+    code?: number
+    data?: Record<string, any>
+    message?: string
+  }
+
   type BaseResponseApp = {
     code?: number
     data?: App
@@ -79,6 +85,12 @@ declare namespace API {
   type BaseResponseLong = {
     code?: number
     data?: number
+    message?: string
+  }
+
+  type BaseResponseMapStringObject = {
+    code?: number
+    data?: Record<string, any>
     message?: string
   }
 
@@ -201,6 +213,11 @@ declare namespace API {
     id?: number
   }
 
+  type DiagramTask = {
+    mermaidCode?: string
+    description?: string
+  }
+
   type DiffResult = {
     fromVersion?: string
     toVersion?: string
@@ -220,9 +237,25 @@ declare namespace API {
     appId: number
   }
 
+  type executeWorkflowParams = {
+    prompt: string
+  }
+
+  type executeWorkflowWithFluxParams = {
+    prompt: string
+  }
+
+  type getAiCodeGenPromptParams = {
+    prompt: string
+  }
+
   type getAppByIdParams = {
     /** 应用ID */
     id: number
+  }
+
+  type getBuildStatusParams = {
+    appId: number
   }
 
   type getLatestVersionParams = {
@@ -255,6 +288,27 @@ declare namespace API {
     appId: number
   }
 
+  type IllustrationTask = {
+    query?: string
+  }
+
+  type ImageCollectionPlan = {
+    contentImageTasks?: ImageSearchTask[]
+    illustrationTasks?: IllustrationTask[]
+    diagramTasks?: DiagramTask[]
+    logoTasks?: LogoTask[]
+  }
+
+  type ImageResource = {
+    category?: 'CONTENT' | 'LOGO' | 'ILLUSTRATION' | 'ARCHITECTURE'
+    description?: string
+    url?: string
+  }
+
+  type ImageSearchTask = {
+    query?: string
+  }
+
   type listAppChatHistoryParams = {
     /** 应用ID */
     appId: number
@@ -273,6 +327,10 @@ declare namespace API {
     userRole?: string
     createTime?: string
     updateTime?: string
+  }
+
+  type LogoTask = {
+    description?: string
   }
 
   type PageApp = {
@@ -300,6 +358,12 @@ declare namespace API {
     totalPage?: number
     totalRow?: number
     optimizeCountQuery?: boolean
+  }
+
+  type QualityResult = {
+    isValid?: boolean
+    errors?: string[]
+    suggestions?: string[]
   }
 
   type RollbackRequest = {
@@ -406,5 +470,23 @@ declare namespace API {
     firstVersion?: string
     latestVersion?: string
     lastUpdated?: string
+  }
+
+  type WorkflowContext = {
+    currentStep?: string
+    originalPrompt?: string
+    imageListStr?: string
+    imageList?: ImageResource[]
+    enhancedPrompt?: string
+    generationType?: 'HTML' | 'MULTI_FILE' | 'VUE_PROJECT'
+    generatedCodeDir?: string
+    buildResultDir?: string
+    errorMessage?: string
+    qualityResult?: QualityResult
+    imageCollectionPlan?: ImageCollectionPlan
+    contentImages?: ImageResource[]
+    illustrations?: ImageResource[]
+    diagrams?: ImageResource[]
+    logos?: ImageResource[]
   }
 }

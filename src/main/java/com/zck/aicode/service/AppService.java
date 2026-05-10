@@ -116,4 +116,12 @@ public interface AppService extends IService<App> {
     String deployApp(Long appId,User longinUser);
 
     void generateAppScreenshotAsync(Long appId, String appUrl);
+
+    /**
+     * 优化提示词
+     *
+     * @param prompt
+     * @return
+     */
+    String getAiCodeGenPrompt(String prompt);
 }

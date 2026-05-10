@@ -15,15 +15,15 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
-public class AiCodeGenTypeRoutingServiceFactory {
+public class AiCodeGenMessageServiceFactory {
 
     /**
      * 创建AI代码生成类型路由服务实例
      */
-    public AiCodeGenTypeRoutingService createAiCodeGenTypeRoutingService() {
+    public AiCodeGenMessageService createAiCodeGenMessageService() {
         // 动态获取多例的路由 ChatModel，支持并发
         ChatModel chatModel = SpringContextUtil.getBean("qwenChatModelPrototype", ChatModel.class);
-        return AiServices.builder(AiCodeGenTypeRoutingService.class)
+        return AiServices.builder(AiCodeGenMessageService.class)
                 .chatModel(chatModel)
                 .inputGuardrails(new PromptSafetyInputGuardrail())//添加输入护轨
                 .build();
@@ -33,8 +33,8 @@ public class AiCodeGenTypeRoutingServiceFactory {
      * 默认提供一个 Bean
      */
     @Bean
-    public AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService() {
-        return createAiCodeGenTypeRoutingService();
+    public AiCodeGenMessageService aiCodeGenMessageService() {
+        return createAiCodeGenMessageService();
     }
 }
 

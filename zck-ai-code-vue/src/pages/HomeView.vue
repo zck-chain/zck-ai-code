@@ -25,8 +25,12 @@
               <button class="action-btn">
                 📁 上传
               </button>
-              <button class="action-btn">
-                ✨ 优化
+              <button
+                @click="optimizePrompt"
+                class="action-btn"
+                :disabled="!promptInput.trim() || optimizing"
+              >
+                {{ optimizing ? '⏳' : '✨ 优化' }}
               </button>
             </div>
             <button
@@ -185,6 +189,7 @@ const myAppsTotalPage = ref(1)
 const featuredAppsTotalPage = ref(1)
 const pageSize = 8
 const loading = ref(false)
+const optimizing = ref(false)
 
 // 打字机效果相关变量
 const placeholderText = '使用 NoCode 创建一个高效的小工具，帮我计算......'
@@ -234,6 +239,34 @@ const createApp = async () => {
     message.error('创建应用失败，请稍后重试')
   } finally {
     loading.value = false
+  }
+}
+
+// 优化提示词
+const optimizePrompt = async () => {
+  if (!promptInput.value.trim()) {
+    message.warning('请先输入提示词')
+    return
+  }
+
+  try {
+    optimizing.value = true
+    const response = await api.appController.getAiCodeGenPrompt({
+      prompt: promptInput.value
+    })
+
+    if (response.data.code === 0 && response.data.data) {
+      // 使用优化后的提示词覆盖当前输入
+      promptInput.value = response.data.data
+      message.success('提示词优化成功')
+    } else {
+      message.error('优化失败：' + response.data.message)
+    }
+  } catch (error) {
+    console.error('优化提示词失败', error)
+    message.error('优化提示词失败，请稍后重试')
+  } finally {
+    optimizing.value = false
   }
 }
 
@@ -309,6 +342,7 @@ const viewWork = (deployKey: string) => {
     alert('当前环境无法打开新窗口');
   }
 }
+
 
 
 
