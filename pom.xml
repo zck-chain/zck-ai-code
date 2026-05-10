@@ -177,6 +177,24 @@
             <artifactId>redisson</artifactId>
             <version>3.50.0</version>
         </dependency>
+        <!--可视化-->
+
+        <!--提供生产就绪的监控基础设施，暴露各种管理和监控端点。它是应用
+            与外部监控系统交互的窗口，但本身不负责指标数据的收集。-->
+        <!--spring-boot-starter-actuator =端点提供者(开门的)
+            micrometer-core=数据收集者(干活的)
+            micrometer-registry-prometheus = 格式转换者(翻的)
+            Prometheus=数据拉取者(消费的)
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
 
     </dependencies>
 
