@@ -170,7 +170,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!deleteResult) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "删除应用失败");
         }
-
         // 6. 返回结果
         return true;
     }
