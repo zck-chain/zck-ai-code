@@ -37,8 +37,8 @@
         <div class="form-item">
           <label>用户ID</label>
           <input
-            v-model.number="searchParams.userId"
-            type="number"
+            v-model="searchParams.userId"
+            type="text"
             placeholder="请输入用户ID"
             class="search-input"
           />
@@ -85,19 +85,19 @@
               <td>{{ new Date(app.createTime || '').toLocaleString('zh-CN') }}</td>
               <td class="action-buttons">
                 <button
-                  @click="editApp(app.id!)"
+                  @click="editApp(String(app.id!))"
                   class="edit-btn"
                 >
                   编辑
                 </button>
                 <button
-                  @click="deleteApp(app.id!)"
+                  @click="deleteApp(String(app.id!))"
                   class="delete-btn"
                 >
                   删除
                 </button>
                 <button
-                  @click="featureApp(app.id!)"
+                  @click="featureApp(String(app.id!))"
                   class="feature-btn"
                 >
                   精选
@@ -182,7 +182,20 @@ const loadApps = async () => {
     })
 
     if (response.data.code === 0 && response.data.data) {
-      apps.value = response.data.data.records || []
+      // 将 userId 转换为字符串，避免大整数精度丢失
+      const records = response.data.data.records || []
+      console.log('原始数据:', records)
+      apps.value = records.map(app => {
+        const userIdStr = String(app.userId || '')
+        const idStr = String(app.id || '')
+        console.log(`转换前 - id: ${typeof app.id} = ${app.id}, userId: ${typeof app.userId} = ${app.userId}`)
+        console.log(`转换后 - id: ${typeof idStr} = ${idStr}, userId: ${typeof userIdStr} = ${userIdStr}`)
+        return {
+          ...app,
+          userId: userIdStr,
+          id: idStr
+        }
+      })
       total.value = response.data.data.totalRow || 0
     } else {
       message.error('加载应用列表失败：' + response.data.message)

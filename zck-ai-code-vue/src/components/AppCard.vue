@@ -12,7 +12,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'view-chat', appId: string | number): void
+  (e: 'view-chat', appId: string): void
   (e: 'view-work', deployKey: string): void
 }>()
 </script>
@@ -22,7 +22,7 @@ defineEmits<{
     <div class="case-cover" :style="{ backgroundImage: `url(${getCoverUrl(app.cover) || 'https://via.placeholder.com/400x300'})` }">
       <div class="case-cover-actions">
         <button
-          @click="app.id && $emit('view-chat', app.id)"
+          @click="app.id && $emit('view-chat', String(app.id))"
           class="btn-view-chat"
         >
           查看对话

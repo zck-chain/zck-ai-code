@@ -34,3 +34,19 @@ export async function listAppChatHistory(
     ...(options || {}),
   })
 }
+
+/** 导出选中的对话记录为Markdown POST /chatHistory/export/markdown */
+export async function exportChatHistoryToMarkdown(
+  body: string[], 
+  options?: { [key: string]: any }
+) {
+  return request<Blob>('/chatHistory/export/markdown', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    responseType: 'blob',
+    ...(options || {}),
+  })
+}

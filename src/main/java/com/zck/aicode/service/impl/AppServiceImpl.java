@@ -128,7 +128,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限修改此应用");
         }
 
-
         // 5. 更新应用
         App app = App.builder()
                 .id(appId)
@@ -243,6 +242,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean adminDeleteApp(long appId) {
         // 1. 参数校验
         if (appId <= 0) {
@@ -260,7 +260,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!deleteResult) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "删除应用失败");
         }
-
+        chatHistoryService.deleteByAppId(appId);
         // 4. 返回结果
         return true;
     }
@@ -396,11 +396,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         //7.调用ai生成代码
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
         //8.收集AI响应内容并在完成后记录到对话历史记录
-        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService ,appId, loginUser,codeGenTypeEnum)
+        Flux<String> stringFlux = streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
                 .doFinally(signalType -> {
                     //9.清除监控上下文
                     MonitorContextHolder.clearContext();
                 });
+        app.setChatTotal(chatHistoryService.chatTotal(appId));
+        updateById(app);
+        return stringFlux;
     }
 
     @Override

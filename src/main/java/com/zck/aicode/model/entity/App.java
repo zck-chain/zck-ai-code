@@ -107,4 +107,11 @@ public class App implements Serializable {
     @Column(value = "isDelete", isLogicDelete = true)
     private Integer isDelete;
 
+    /**
+     * 对话论次
+     */
+    @Column(value = "chatTotal")
+    private Long chatTotal;
+
+
 }

@@ -5,7 +5,7 @@ declare namespace API {
   }
 
   type App = {
-    id?: number
+    id?: string
     appName?: string
     cover?: string
     initPrompt?: string
@@ -13,7 +13,7 @@ declare namespace API {
     deployKey?: string
     deployedTime?: string
     priority?: number
-    userId?: number
+    userId?: string
     editTime?: string
     createTime?: string
     updateTime?: string
@@ -25,7 +25,7 @@ declare namespace API {
   }
 
   type AppDeployRequest = {
-    appId?: number
+    appId?: string
   }
 
   type AppQueryRequest = {
@@ -36,11 +36,11 @@ declare namespace API {
     appName?: string
     codeGenType?: string
     priority?: number
-    userId?: number
+    userId?: string
   }
 
   type AppUpdateRequest = {
-    id?: number
+    id?: string
     appName?: string
     cover?: string
     priority?: number
@@ -143,11 +143,11 @@ declare namespace API {
   }
 
   type ChatHistory = {
-    id?: number
+    id?: string
     message?: string
     messageType?: string
-    appId?: number
-    userId?: number
+    appId?: string
+    userId?: string
     createTime?: string
     updateTime?: string
     isDelete?: number
@@ -158,11 +158,11 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    id?: number
+    id?: string
     message?: string
     messageType?: string
-    appId?: number
-    userId?: number
+    appId?: string
+    userId?: string
     lastCreateTime?: string
   }
 
@@ -210,7 +210,7 @@ declare namespace API {
   }
 
   type DeleteRequest = {
-    id?: number
+    id?: string
   }
 
   type DiagramTask = {
@@ -319,7 +319,7 @@ declare namespace API {
   }
 
   type LoginUserVO = {
-    id?: number
+    id?: string
     userAccount?: string
     userName?: string
     userAvatar?: string
@@ -388,7 +388,7 @@ declare namespace API {
   }
 
   type User = {
-    id?: number
+    id?: string
     userAccount?: string
     userPassword?: string
     userName?: string
@@ -419,7 +419,7 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    id?: number
+    id?: string
     userName?: string
     userAccount?: string
     userProfile?: string
@@ -433,7 +433,7 @@ declare namespace API {
   }
 
   type UserUpdateRequest = {
-    id?: number
+    id?: string
     userName?: string
     userAvatar?: string
     userProfile?: string
@@ -441,7 +441,7 @@ declare namespace API {
   }
 
   type UserVO = {
-    id?: number
+    id?: string
     userAccount?: string
     userName?: string
     userAvatar?: string
@@ -451,8 +451,8 @@ declare namespace API {
   }
 
   type VersionCode = {
-    id?: number
-    appId?: number
+    id?: string
+    appId?: string
     version?: string
     commitMessage?: string
     author?: number
@@ -465,7 +465,7 @@ declare namespace API {
   }
 
   type VersionStatistics = {
-    appId?: number
+    appId?: string
     totalVersions?: number
     firstVersion?: string
     latestVersion?: string

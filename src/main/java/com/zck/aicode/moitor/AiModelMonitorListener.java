@@ -1,5 +1,6 @@
 package com.zck.aicode.moitor;
 
+import cn.hutool.core.map.MapUtil;
 import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
@@ -42,7 +43,7 @@ public class AiModelMonitorListener implements ChatModelListener {
 
     @Override
     public void onResponse(ChatModelResponseContext responseContext) {
-        // 从属性中获取监控信息（由 onRequest 方法存储）
+         //从属性中获取监控信息（由 onRequest 方法存储）
         Map<Object, Object> attributes = responseContext.attributes();
         // 从监控上下文中获取信息
         MonitorContext context = (MonitorContext) attributes.get(MONITOR_CONTEXT_KEY);
@@ -53,7 +54,7 @@ public class AiModelMonitorListener implements ChatModelListener {
         // 记录成功请求
         aiModelMetricsCollector.recordRequest(userId, appId, modelName, "success");
         // 记录响应时间
-        recordResponseTime(attributes, userId, appId, modelName);
+        recordResponseTime(MapUtil.empty(), userId, appId, modelName);
         // 记录 Token 使用情况
         recordTokenUsage(responseContext, userId, appId, modelName);
     }

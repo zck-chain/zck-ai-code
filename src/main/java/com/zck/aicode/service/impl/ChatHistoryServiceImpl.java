@@ -22,6 +22,7 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     @Resource
     @Lazy
     private AppService appService;
+
 
     /**
      * 添加消息
@@ -77,11 +79,23 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
      */
     @Override
     public boolean deleteByAppId(Long appId) {
-        ThrowUtils.throwIf(appId==null || appId<=0, ErrorCode.PARAMS_ERROR, "应用Id不能为空");
-        QueryWrapper queryWrapper = QueryWrapper.create()
-                .eq("appId", appId);
-        return this.remove(queryWrapper);
+        // 1. 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用Id不能为空");
+
+        try {
+            // 2. 构建查询条件并执行删除
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .eq(ChatHistory::getAppId, appId);
+
+            // 3. 执行删除并返回结果 (remove 返回 boolean)
+            return this.remove(queryWrapper);
+        } catch (Exception e) {
+            log.error("删除应用[{}]聊天记录时发生异常", appId, e);
+            // 出现异常返回 false
+            return false;
+        }
     }
+
 
     /**
      * 获取查询包装类
@@ -104,11 +118,12 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         String sortField = chatHistoryQueryRequest.getSortField();
         String sortOrder = chatHistoryQueryRequest.getSortOrder();
         // 拼接查询条件
-        queryWrapper.eq("id", id)
-                .like("message", message)
-                .eq("messageType", messageType)
-                .eq("appId", appId)
-                .eq("userId", userId);
+
+        queryWrapper.eq("id", id,id!=null)
+                .like("message", message,StrUtil.isNotBlank(message))
+                .eq("messageType", messageType,StrUtil.isNotBlank(messageType))
+                .eq("appId", appId,appId!=null)
+                .eq("userId", userId,userId!=null);
         // 游标查询逻辑 - 只使用 createTime 作为游标
         if (lastCreateTime != null) {
             queryWrapper.lt("createTime", lastCreateTime);
@@ -178,6 +193,14 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             return 0;
         }
 
+    }
+
+    @Override
+    public long chatTotal(Long appId) {
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID不能为空");
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq(ChatHistory::getAppId, appId);
+        return this.count(queryWrapper);
     }
 
 

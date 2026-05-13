@@ -26,4 +26,13 @@ public interface ChatHistoryService extends IService<ChatHistory> {
                                                User loginUser);
 
     int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
+
+    /**
+     * 统计对话轮次
+     * @param appId
+     * @return
+     */
+    long chatTotal(Long appId);
+
+
 }

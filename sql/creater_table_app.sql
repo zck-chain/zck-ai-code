@@ -14,6 +14,7 @@ create table app
     createTime   datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete     tinyint  default 0                 not null comment '是否删除',
+    chatTotal    long                               not null comment '聊天次数',
     UNIQUE KEY uk_deployKey (deployKey), -- 确保部署标识唯一
     INDEX idx_appName (appName),         -- 提升基于应用名称的查询性能
     INDEX idx_userId (userId)            -- 提升基于用户 ID 的查询性能

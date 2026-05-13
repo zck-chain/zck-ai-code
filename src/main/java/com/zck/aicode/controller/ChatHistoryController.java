@@ -12,16 +12,21 @@ import com.zck.aicode.exception.ThrowUtils;
 import com.zck.aicode.model.dto.chatHistory.ChatHistoryQueryRequest;
 import com.zck.aicode.model.entity.ChatHistory;
 import com.zck.aicode.model.entity.User;
+import com.zck.aicode.model.enums.ChatHistoryMessageTypeEnum;
 import com.zck.aicode.service.ChatHistoryService;
 import com.zck.aicode.service.UserService;
+import com.zck.aicode.utils.MarkdownExportUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 对话历史 控制层。
@@ -77,5 +82,40 @@ public class ChatHistoryController {
         return ResultUtils.success(result);
     }
 
+    @PostMapping("/export/markdown")
+    @Operation(summary = "导出选中的对话记录为Markdown")
+    public void exportChatHistoryToMarkdown(
+            @Parameter(description = "选中的对话记录ID列表", required = true) @RequestBody List<Long> ids,
+            HttpServletResponse response) throws IOException {
+
+        // 1. 参数校验
+        ThrowUtils.throwIf(ids == null || ids.isEmpty(), ErrorCode.PARAMS_ERROR, "请至少选择一条记录");
+
+        // 2. 批量查询记录
+        List<ChatHistory> historyList = chatHistoryService.listByIds(ids);
+        ThrowUtils.throwIf(historyList == null || historyList.isEmpty(), ErrorCode.NOT_FOUND_ERROR, "未找到对话记录");
+
+        // 3. 构建 Markdown
+        MarkdownExportUtil.MarkdownBuilder builder = new MarkdownExportUtil.MarkdownBuilder();
+        builder.h1("对话记录导出").horizontalRule();
+
+        for (ChatHistory history : historyList) {
+            String messageType = history.getMessageType();
+
+            // 核心点：结合你提供的枚举 ChatHistoryMessageTypeEnum 判断角色
+            if (ChatHistoryMessageTypeEnum.USER.getValue().equals(messageType)) {
+                builder.h3("🧑 用户");
+            } else if (ChatHistoryMessageTypeEnum.AI.getValue().equals(messageType)) {
+                builder.h3("🤖 AI 助手");
+            } else {
+                builder.h3("系统");
+            }
+
+            builder.appendRaw(history.getMessage()).horizontalRule();
+        }
+
+        // 4. 执行导出下载
+        MarkdownExportUtil.exportMarkdown(response, builder.build(), "对话记录_选中导出");
+    }
 
 }

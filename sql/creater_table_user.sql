@@ -2,11 +2,6 @@
 # @author <a href="https://github.com/liyupi">程序员鱼皮</a>
 # @from <a href="https://codefather.cn">编程导航学习圈</a>
 
--- 创建库
-create database if not exists zck_ai_code;
-
--- 切换库
-use zck_ai_code;
 
 -- 用户表
 -- 以下是建表语句
