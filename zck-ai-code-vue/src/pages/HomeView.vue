@@ -177,6 +177,7 @@ import api from '@/api'
 import { useLoginUserStore } from '@/stores/loginUser'
 import AppCard from '@/components/AppCard.vue'
 import '@/styles/home.styles.css'
+import { API_CONFIG } from '@/config/api'
 // 状态管理
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
@@ -323,7 +324,8 @@ const goToAppChat = (appId: string | number) => {
 const viewWork = (deployKey: string) => {
   // 确保在浏览器环境中执行
   if (typeof window !== 'undefined') {
-    const url = `http://localhost/${deployKey}`;
+    const baseUrl = API_CONFIG.DIST_URL
+    const url = `${baseUrl}/${deployKey}`;
 
     try {
       // 测试window.open是否可用

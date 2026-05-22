@@ -155,7 +155,6 @@ public class AppController {
 
     // 【管理员】根据 id 查看应用详情
     @GetMapping("/admin/get")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @Operation(summary = "管理员获取应用详情", description = "管理员根据ID查看任意应用详情")
     public BaseResponse<App> adminGetAppById(@Parameter(description = "应用ID", required = true) long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
