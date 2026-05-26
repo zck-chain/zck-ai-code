@@ -6,6 +6,77 @@ AI 驱动的代码生成平台 —— 通过自然语言描述，让 AI 帮你�
 
 AI Code Father 是一个基于 AI 的 NoCode 平台。用户只需用自然语言描述需求（例如"帮我做一个电商页面"），AI 即可自动生成完整的 HTML 页面、多文件项目或 Vue 3 应用。支持实时预览、在线编辑、版本管理、部署上线等全流程功能。
 
+## 系统架构
+
+```mermaid
+graph TB
+    subgraph 用户端
+        Browser[浏览器]
+    end
+
+    subgraph 前端 [Vue 3 前端]
+        direction TB
+        Pages[页面组件]
+        Components[通用组件]
+        Router[Vue Router]
+        Store[Pinia 状态管理]
+        API[Axios API 客户端]
+    end
+
+    subgraph 后端 [Spring Boot 后端]
+        direction TB
+        Controller[REST 控制器]
+        Service[业务服务层]
+        AI[AI 服务层<br/>LangChain4j]
+        Workflow[LangGraph4j 工作流引擎]
+        Core[代码生成核心引擎]
+    end
+
+    subgraph 外部服务
+        LLM[通义千问<br/>DashScope]
+        COS[腾讯云 COS<br/>对象存储]
+    end
+
+    subgraph 数据层
+        MySQL[(MySQL 8)]
+        Redis[(Redis)]
+    end
+
+    subgraph 监控
+        Prometheus[Prometheus]
+        Grafana[Grafana]
+    end
+
+    Browser -->|HTTP/SSE| Controller
+    Controller --> Service
+    Service --> AI
+    AI --> Workflow
+    Workflow --> Core
+    Core --> COS
+    AI <-->|API 调用| LLM
+    Service --> MySQL
+    Service --> Redis
+    Controller --> Prometheus
+    Prometheus --> Grafana
+```
+
+### AI 工作流
+
+```mermaid
+graph LR
+    A[用户输入提示词] --> B[图片收集节点]
+    B --> C[提示词优化节点]
+    C --> D[智能类型路由节点]
+    D --> E1[HTML 生成]
+    D --> E2[多文件项目生成]
+    D --> E3[Vue 项目生成]
+    E1 --> F[代码质量检查]
+    E2 --> F
+    E3 --> F
+    F --> G[项目构建节点]
+    G --> H[输出最终代码]
+```
+
 ### 核心功能
 
 - **AI 代码生成** — 支持三种模式：单 HTML 页面、多文件项目、完整 Vue 3 应用
